@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ app_name }}{% endblock %}
+{% block content %}
+{% if request.query_params.get("forbidden") %}
+<div class="banner banner--error" role="alert">
+  <span class="banner__icon" aria-hidden="true">!</span>
+  <span>You do not have access to that roster. Open the
+    <a href="/rosters?view=alliance&amp;rate=1">Alliance</a> roster, or use <a href="/profile">My ships</a> for your
+    fleet.</span>
+</div>
+{% endif %}
+<header class="page-head">
+  <div class="page-head__identity">
+    {% if user.avatar_hash %}
+    <img
+      class="page-head__avatar"
+      src="https://cdn.discordapp.com/avatars/{{ user.discord_id }}/{{ user.avatar_hash }}.png?size=128"
+      alt=""
+      width="72"
+      height="72"
+    />
+    {% else %}
+    <span class="page-head__avatar page-head__avatar--fallback" aria-hidden="true">{{ (user.global_name or user.username)[0]|e }}</span>
+    {% endif %}
+    <div>
+      <h1 class="page-head__title">Dashboard</h1>
+      <p class="page-head__meta">
+        {{ user.global_name or user.username }}
+        <span class="dot">·</span>
+        <span class="muted">@{{ user.username }}</span>
+      </p>
+    </div>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost btn--sm" href="{{ default_roster_href }}">Rosters</a>
+    <a class="btn btn--ghost btn--sm" href="/profile">My ships</a>
+    <a class="btn btn--primary btn--sm" href="/tools">Tools</a>
+  </div>
+</header>
+{% endblock %}

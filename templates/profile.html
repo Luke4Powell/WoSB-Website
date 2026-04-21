@@ -1,0 +1,1031 @@
+{% extends "base.html" %}
+{% block title %}My ships — {{ app_name }}{% endblock %}
+{% block content %}
+<script type="application/json" id="ships-catalog-json">{{ ships_catalog | tojson }}</script>
+<script type="application/json" id="upgrades-catalog-json">{{ upgrades_catalog | tojson }}</script>
+<script type="application/json" id="consumables-catalog-json">{{ consumables_catalog | tojson }}</script>
+
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow">Loadouts</p>
+    <h1 class="page-head__title">My ships &amp; builds</h1>
+    <p class="page-head__meta muted">
+      Signed in as <strong class="text-bright">{{ user.global_name or user.username }}</strong>
+      {% if user.home_guild_tag %}
+      <span class="dot">·</span>
+      Guild: <strong class="text-bright">{{ user.home_guild_tag }}</strong>
+      {% endif %}
+    </p>
+  </div>
+</header>
+
+<section class="card card--lift">
+  <div class="card__head">
+    <h2 class="card__title">Your fleet</h2>
+    <span class="card__badge">Saved to your account</span>
+  </div>
+  {% if not ships_catalog.ships %}
+  <p class="card__lede small muted" style="margin-top: 0">The ship roster is not available yet.</p>
+  {% else %}
+  <p class="card__lede small muted" style="margin-top: 0">
+    Pick your ship, upgrades, and consumables. Slot 1 needs a real upgrade; slots 2–4 can use <strong>Not Unlocked Yet</strong>
+    if still locked in-game. Slot 5 is optional. <strong>Structural Expansion</strong> unlocks two more upgrade slots.
+    Use <strong>Add ship</strong> on the right, select a row to edit on the left, then <strong>Save fleet</strong>.
+  </p>
+  {% endif %}
+
+  <div class="fleet-toolbar">
+    <button type="button" class="btn btn--primary btn--sm" id="fleet-save" {% if not ships_catalog.ships %}disabled{% endif %}>
+      Save fleet
+    </button>
+    <span class="fleet-toolbar__status small muted" id="fleet-status" aria-live="polite"></span>
+  </div>
+
+  <div id="fleet-root" class="fleet-root" {% if not ships_catalog.ships %}hidden{% endif %}>
+    {% if ships_catalog.ships %}
+    <div class="fleet-layout">
+      <div class="fleet-editor-pane">
+        <p class="fleet-pane-eyebrow small muted">Loadout editor</p>
+        <h3 class="fleet-pane-title" id="fleet-editor-heading">Loading…</h3>
+        <p class="fleet-editor-sub small muted" id="fleet-editor-sub"></p>
+        <div id="fleet-editor-mount" class="fleet-editor-mount"></div>
+      </div>
+      <aside class="fleet-roster-pane" aria-label="Ships in fleet">
+        <div class="fleet-roster-head">
+          <h3 class="fleet-pane-title">Ships in fleet</h3>
+          <span class="fleet-roster-count small muted" id="fleet-roster-count"></span>
+        </div>
+        <ul id="fleet-roster-list" class="fleet-roster-list"></ul>
+        <button type="button" class="btn btn--ghost btn--sm fleet-roster-add" id="fleet-add-ship">
+          Add ship
+        </button>
+      </aside>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  .fleet-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0.85rem 0 1rem;
+  }
+  .fleet-toolbar__status {
+    margin: 0;
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  .fleet-root {
+    min-width: 0;
+  }
+  .fleet-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem);
+    gap: 1.25rem 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 52rem) {
+    .fleet-layout {
+      grid-template-columns: 1fr;
+    }
+    .fleet-roster-pane {
+      order: -1;
+    }
+  }
+  .fleet-editor-pane {
+    min-width: 0;
+  }
+  .fleet-pane-eyebrow {
+    margin: 0 0 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .fleet-editor-pane .fleet-pane-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.08rem;
+  }
+  .fleet-editor-sub {
+    margin: 0 0 0.75rem;
+    min-height: 1.25em;
+  }
+  .fleet-editor-mount {
+    min-width: 0;
+  }
+  .fleet-roster-pane {
+    border-radius: var(--radius-sm, 10px);
+    border: 1px solid var(--border, rgba(244, 234, 215, 0.14));
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.85rem 0.9rem 1rem;
+  }
+  .fleet-roster-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.35rem 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+  .fleet-roster-head .fleet-pane-title {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .fleet-roster-count {
+    font-variant-numeric: tabular-nums;
+  }
+  .fleet-roster-list {
+    list-style: none;
+    margin: 0 0 0.65rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-height: min(60vh, 28rem);
+    overflow-y: auto;
+  }
+  .fleet-roster-item {
+    width: 100%;
+    margin: 0;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.22));
+    background: #1a1510;
+    color: var(--text, #f6efe3);
+    font: inherit;
+    font-size: 0.86rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .fleet-roster-item:hover {
+    border-color: rgba(244, 234, 215, 0.38);
+  }
+  .fleet-roster-item:focus-visible {
+    outline: 2px solid var(--ochre-soft, #e8c978);
+    outline-offset: 2px;
+  }
+  .fleet-roster-item.is-active {
+    border-color: rgba(232, 201, 120, 0.65);
+    box-shadow: 0 0 0 1px rgba(232, 201, 120, 0.2);
+  }
+  .fleet-roster-add {
+    width: 100%;
+  }
+  .ship-card {
+    border-radius: var(--radius-sm, 10px);
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.28));
+    background: linear-gradient(180deg, var(--surface-top, #3f332b) 0%, var(--surface-deep, #261c18) 100%);
+    padding: 1rem 1.05rem 1.1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  .ship-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 0.75rem;
+    align-items: flex-end;
+    margin-bottom: 0.65rem;
+  }
+  .ship-field {
+    flex: 1 1 14rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .ship-field label,
+  .ship-slots__legend {
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+  }
+  .ship-input {
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: #1f1814;
+    color: var(--text, #f6efe3);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .ship-select {
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: #14100c;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+  /* Class headers in the list: ochre + underline. Ship rows: bright white (where the browser honors option styling). */
+  .ship-select optgroup {
+    font-weight: 800;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: rgba(232, 201, 120, 0.95);
+    background-color: #0d0a08;
+    padding-top: 0.15rem;
+  }
+  .ship-select option {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    background-color: #1a1510;
+  }
+  select.ship-up-slot {
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: #14100c;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+  select.ship-up-slot optgroup {
+    font-weight: 800;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: rgba(232, 201, 120, 0.85);
+    background-color: #0d0a08;
+  }
+  select.ship-up-slot option {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.86rem;
+    text-transform: none;
+    background-color: #1a1510;
+  }
+  select.ship-con-slot {
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: #14100c;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+  select.ship-con-slot optgroup {
+    font-weight: 800;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: rgba(232, 201, 120, 0.85);
+    background-color: #0d0a08;
+  }
+  select.ship-con-slot option {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 0.86rem;
+    text-transform: none;
+    background-color: #1a1510;
+  }
+  .ship-meta-line {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    color: var(--muted, #c9b8a4);
+    min-height: 1.25rem;
+  }
+  .ship-meta__rate {
+    color: rgba(200, 188, 172, 0.95);
+    font-weight: 500;
+  }
+  .ship-meta__class {
+    color: var(--stucco, #f4ead7);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.15em;
+    text-decoration-color: rgba(232, 201, 120, 0.9);
+  }
+  .ship-card__remove {
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .ship-slots {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border, rgba(244, 234, 215, 0.12));
+    display: grid;
+    gap: 0.55rem;
+  }
+  .ship-slot-row {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 0.45rem 0.65rem;
+    align-items: center;
+  }
+  .ship-slot-row label {
+    font-size: 0.78rem;
+    color: rgba(220, 208, 190, 0.92);
+    margin: 0;
+  }
+  .ship-slot-row--optional label {
+    color: var(--muted, #b8a99a);
+  }
+  .ship-slot-row--structural-extra {
+    display: none;
+  }
+  .ship-card--structural-expansion .ship-slot-row--structural-extra {
+    display: grid;
+  }
+  .fleet-empty {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--muted, #c9b8a4);
+    border: 1px dashed var(--border-strong, rgba(244, 234, 215, 0.22));
+    border-radius: var(--radius-sm, 10px);
+  }
+</style>
+
+<script>
+  (function () {
+    var SE_LABEL = {{ structural_expansion_label | tojson }};
+    var NU_LABEL = {{ not_unlocked_yet_label | tojson }};
+    var root = document.getElementById("fleet-root");
+    var editorMount = document.getElementById("fleet-editor-mount");
+    var rosterListEl = document.getElementById("fleet-roster-list");
+    var statusEl = document.getElementById("fleet-status");
+    var maxShips = 40;
+    var fleetBuffer = [];
+    var activeIndex = -1;
+    var editorCard = null;
+
+    if (!root || !editorMount || !rosterListEl) {
+      return;
+    }
+    var catalogEl = document.getElementById("ships-catalog-json");
+    var CATALOG = { ships: [] };
+    try {
+      CATALOG = JSON.parse(catalogEl.textContent || "{}");
+    } catch (e) {
+      CATALOG = { ships: [] };
+    }
+    var shipsList = Array.isArray(CATALOG.ships) ? CATALOG.ships : [];
+    var byId = {};
+    shipsList.forEach(function (s) {
+      if (s && s.id) {
+        byId[s.id] = s;
+      }
+    });
+
+    var upgradeCatEl = document.getElementById("upgrades-catalog-json");
+    var UPGRADE_GROUPS = [];
+    try {
+      var upParsed = JSON.parse((upgradeCatEl && upgradeCatEl.textContent) || "{}");
+      UPGRADE_GROUPS = Array.isArray(upParsed.groups) ? upParsed.groups : [];
+    } catch (e2) {
+      UPGRADE_GROUPS = [];
+    }
+
+    var consumableCatEl = document.getElementById("consumables-catalog-json");
+    var CONSUMABLE_GROUPS = [];
+    try {
+      var coParsed = JSON.parse((consumableCatEl && consumableCatEl.textContent) || "{}");
+      CONSUMABLE_GROUPS = Array.isArray(coParsed.groups) ? coParsed.groups : [];
+    } catch (e3) {
+      CONSUMABLE_GROUPS = [];
+    }
+
+    function upgradeIsListed(val) {
+      if (!val) {
+        return true;
+      }
+      for (var gi = 0; gi < UPGRADE_GROUPS.length; gi++) {
+        var opts = UPGRADE_GROUPS[gi].options || [];
+        if (opts.indexOf(val) !== -1) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function padUpgradeList(data) {
+      var u = (data && data.upgrades) || [];
+      var out = [];
+      for (var i = 0; i < 7; i++) {
+        out.push(u[i] != null && String(u[i]).trim() ? String(u[i]).trim() : "");
+      }
+      return out;
+    }
+
+    function syncStructuralExpansionSlots(card) {
+      var slots = card.querySelectorAll(".ship-up-slot");
+      var has = false;
+      for (var i = 0; i < slots.length; i++) {
+        if ((slots[i].value || "").trim() === SE_LABEL) {
+          has = true;
+          break;
+        }
+      }
+      if (has) {
+        card.classList.add("ship-card--structural-expansion");
+      } else {
+        card.classList.remove("ship-card--structural-expansion");
+        for (var j = 5; j <= 6; j++) {
+          var el = card.querySelector('.ship-up-slot[data-slot="' + j + '"]');
+          if (el) {
+            el.value = "";
+          }
+        }
+      }
+    }
+
+    function populateUpgradeSelect(selectEl, selectedValue, optionalSlot) {
+      while (selectEl.firstChild) {
+        selectEl.removeChild(selectEl.firstChild);
+      }
+      var ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = optionalSlot ? "— Optional —" : "— Select upgrade —";
+      selectEl.appendChild(ph);
+      if (selectedValue && !upgradeIsListed(selectedValue)) {
+        var leg = document.createElement("option");
+        leg.value = selectedValue;
+        leg.textContent = selectedValue + " (saved)";
+        selectEl.appendChild(leg);
+      }
+      UPGRADE_GROUPS.forEach(function (g) {
+        var og = document.createElement("optgroup");
+        og.label = g.label || g.id || "Upgrades";
+        (g.options || []).forEach(function (text) {
+          var o = document.createElement("option");
+          o.value = text;
+          o.textContent = text;
+          og.appendChild(o);
+        });
+        selectEl.appendChild(og);
+      });
+      if (selectedValue) {
+        selectEl.value = selectedValue;
+      }
+    }
+
+    function consumableIsListed(val) {
+      if (!val) {
+        return true;
+      }
+      for (var gi = 0; gi < CONSUMABLE_GROUPS.length; gi++) {
+        var opts = CONSUMABLE_GROUPS[gi].options || [];
+        if (opts.indexOf(val) !== -1) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function populateConsumableSelect(selectEl, selectedValue) {
+      while (selectEl.firstChild) {
+        selectEl.removeChild(selectEl.firstChild);
+      }
+      var ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = "— Optional —";
+      selectEl.appendChild(ph);
+      if (selectedValue && !consumableIsListed(selectedValue)) {
+        var leg = document.createElement("option");
+        leg.value = selectedValue;
+        leg.textContent = selectedValue + " (saved)";
+        selectEl.appendChild(leg);
+      }
+      CONSUMABLE_GROUPS.forEach(function (g) {
+        var og = document.createElement("optgroup");
+        og.label = g.label || g.id || "Consumables";
+        (g.options || []).forEach(function (text) {
+          var o = document.createElement("option");
+          o.value = text;
+          o.textContent = text;
+          og.appendChild(o);
+        });
+        selectEl.appendChild(og);
+      });
+      if (selectedValue) {
+        selectEl.value = selectedValue;
+      }
+    }
+
+    function setStatus(msg, isErr) {
+      statusEl.textContent = msg || "";
+      statusEl.style.color = isErr ? "var(--coral, #e07a5f)" : "";
+    }
+
+    function newInstanceId() {
+      if (window.crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return "row_" + Date.now() + "_" + Math.random().toString(16).slice(2, 10);
+    }
+
+    function updateShipMeta(card) {
+      var sel = card.querySelector(".ship-select");
+      var meta = card.querySelector(".ship-meta-line");
+      var sid = (sel && sel.value) || "";
+      var ship = byId[sid];
+      meta.textContent = "";
+      if (!ship) {
+        return;
+      }
+      var rateEl = document.createElement("span");
+      rateEl.className = "ship-meta__rate";
+      rateEl.textContent = ship.rate || "—";
+      var dot = document.createTextNode(" · ");
+      var classEl = document.createElement("span");
+      classEl.className = "ship-meta__class";
+      classEl.textContent = ship.class || "—";
+      meta.appendChild(rateEl);
+      meta.appendChild(dot);
+      meta.appendChild(classEl);
+    }
+
+    var CLASS_ORDER = [
+      "Fast Class",
+      "Combat Class",
+      "Transport Class",
+      "Heavy Class",
+      "Siege Class",
+      "Imperial Class",
+      "Premium Class",
+    ];
+
+    function populateShipSelect(sel, selectedId) {
+      while (sel.firstChild) {
+        sel.removeChild(sel.firstChild);
+      }
+      var o0 = document.createElement("option");
+      o0.value = "";
+      o0.textContent = "— Select ship —";
+      sel.appendChild(o0);
+
+      var byClass = {};
+      shipsList.forEach(function (s) {
+        var c = String(s.class || "").trim() || "Other";
+        if (!byClass[c]) {
+          byClass[c] = [];
+        }
+        byClass[c].push(s);
+      });
+
+      function appendGroup(className) {
+        var group = byClass[className];
+        if (!group || !group.length) {
+          return;
+        }
+        var og = document.createElement("optgroup");
+        og.label = className;
+        group.forEach(function (s) {
+          var o = document.createElement("option");
+          o.value = s.id;
+          var label = s.name || "";
+          if (s.rate) {
+            label += " — " + s.rate;
+          }
+          o.textContent = label;
+          og.appendChild(o);
+        });
+        sel.appendChild(og);
+      }
+
+      CLASS_ORDER.forEach(function (cn) {
+        appendGroup(cn);
+      });
+      Object.keys(byClass).forEach(function (k) {
+        if (CLASS_ORDER.indexOf(k) === -1) {
+          appendGroup(k);
+        }
+      });
+
+      if (selectedId && byId[selectedId]) {
+        sel.value = selectedId;
+      }
+    }
+
+    function createShipCard(data) {
+      var instanceId = (data && data.instance_id) || newInstanceId();
+      var shipId = (data && data.ship_id) || "";
+      var upgrades = padUpgradeList(data);
+      var consumables = (data && data.consumables) || ["", "", ""];
+
+      var card = document.createElement("article");
+      card.className = "ship-card ship-card--editor";
+      card.setAttribute("data-instance-id", instanceId);
+
+      var top = document.createElement("div");
+      top.className = "ship-card__top";
+
+      var fShip = document.createElement("div");
+      fShip.className = "ship-field";
+      var ls = document.createElement("label");
+      ls.textContent = "Ship";
+      var sel = document.createElement("select");
+      sel.className = "ship-input ship-select";
+      sel.required = true;
+      populateShipSelect(sel, shipId);
+      sel.addEventListener("change", function () {
+        updateShipMeta(card);
+        syncEditorToBuffer();
+        renderRoster();
+        updateEditorChrome();
+      });
+      var meta = document.createElement("p");
+      meta.className = "ship-meta-line";
+      meta.setAttribute("aria-live", "polite");
+      fShip.appendChild(ls);
+      fShip.appendChild(sel);
+      fShip.appendChild(meta);
+
+      var rm = document.createElement("button");
+      rm.type = "button";
+      rm.className = "btn btn--ghost btn--sm ship-card__remove";
+      rm.textContent = "Remove from fleet";
+      rm.addEventListener("click", function () {
+        onEditorRemoveShip();
+      });
+
+      top.appendChild(fShip);
+      top.appendChild(rm);
+      card.appendChild(top);
+      updateShipMeta(card);
+
+      var upBlock = document.createElement("div");
+      upBlock.className = "ship-slots";
+      var upLeg = document.createElement("div");
+      upLeg.className = "ship-slots__legend";
+      upLeg.textContent = "Upgrades";
+      upBlock.appendChild(upLeg);
+      for (var u = 0; u < 7; u++) {
+        var row = document.createElement("div");
+        row.className = "ship-slot-row";
+        if (u >= 4) {
+          row.className += " ship-slot-row--optional";
+        }
+        if (u >= 5) {
+          row.className += " ship-slot-row--structural-extra";
+        }
+        var lab = document.createElement("label");
+        if (u < 4) {
+          lab.textContent = "Slot " + (u + 1);
+        } else {
+          lab.textContent = "Slot " + (u + 1) + " (optional)";
+        }
+        var upsel = document.createElement("select");
+        upsel.className = "ship-up-slot";
+        upsel.setAttribute("data-slot", String(u));
+        populateUpgradeSelect(upsel, (upgrades[u] || "").trim(), u >= 4);
+        row.appendChild(lab);
+        row.appendChild(upsel);
+        upBlock.appendChild(row);
+      }
+      upBlock.addEventListener("change", function (ev) {
+        var t = ev.target;
+        if (t && t.classList && t.classList.contains("ship-up-slot")) {
+          syncStructuralExpansionSlots(card);
+        }
+      });
+      syncStructuralExpansionSlots(card);
+      card.appendChild(upBlock);
+
+      var coBlock = document.createElement("div");
+      coBlock.className = "ship-slots";
+      var coLeg = document.createElement("div");
+      coLeg.className = "ship-slots__legend";
+      coLeg.textContent = "Consumables";
+      coBlock.appendChild(coLeg);
+      for (var c = 0; c < 3; c++) {
+        var crow = document.createElement("div");
+        crow.className = "ship-slot-row ship-slot-row--optional";
+        var clab = document.createElement("label");
+        clab.textContent = "Slot " + (c + 1);
+        var csel = document.createElement("select");
+        csel.className = "ship-con-slot";
+        csel.setAttribute("data-slot", String(c));
+        populateConsumableSelect(csel, (consumables[c] || "").trim());
+        crow.appendChild(clab);
+        crow.appendChild(csel);
+        coBlock.appendChild(crow);
+      }
+      card.appendChild(coBlock);
+
+      return card;
+    }
+
+    function readSlots(card, selector) {
+      var inps = Array.prototype.slice.call(card.querySelectorAll(selector));
+      inps.sort(function (a, b) {
+        return parseInt(a.getAttribute("data-slot"), 10) - parseInt(b.getAttribute("data-slot"), 10);
+      });
+      return inps.map(function (el) {
+        return (el.value || "").trim();
+      });
+    }
+
+    function syncEditorToBuffer() {
+      if (activeIndex < 0 || activeIndex >= fleetBuffer.length || !editorCard) {
+        return;
+      }
+      var sel = editorCard.querySelector(".ship-select");
+      fleetBuffer[activeIndex] = {
+        instance_id: editorCard.getAttribute("data-instance-id") || newInstanceId(),
+        ship_id: (sel && sel.value) || "",
+        upgrades: readSlots(editorCard, ".ship-up-slot"),
+        consumables: readSlots(editorCard, ".ship-con-slot"),
+      };
+    }
+
+    function rosterShipTitle(sh) {
+      var ship = byId[sh.ship_id];
+      if (ship) {
+        var t = ship.name || ship.id || "Ship";
+        if (ship.rate) {
+          t += " — " + ship.rate;
+        }
+        return t;
+      }
+      return "Unnamed row · tap to choose ship";
+    }
+
+    function applyShipToEditor(card, sh) {
+      card.setAttribute("data-instance-id", sh.instance_id || newInstanceId());
+      var sel = card.querySelector(".ship-select");
+      populateShipSelect(sel, sh.ship_id || "");
+      var ups = padUpgradeList(sh);
+      for (var u = 0; u < 7; u++) {
+        var upsel = card.querySelector('.ship-up-slot[data-slot="' + u + '"]');
+        if (upsel) {
+          populateUpgradeSelect(upsel, (ups[u] || "").trim(), u >= 4);
+        }
+      }
+      for (var c = 0; c < 3; c++) {
+        var csel = card.querySelector('.ship-con-slot[data-slot="' + c + '"]');
+        if (csel) {
+          populateConsumableSelect(csel, ((sh.consumables && sh.consumables[c]) || "").trim());
+        }
+      }
+      syncStructuralExpansionSlots(card);
+      updateShipMeta(card);
+    }
+
+    function updateEditorChrome() {
+      var heading = document.getElementById("fleet-editor-heading");
+      var sub = document.getElementById("fleet-editor-sub");
+      if (!heading || !sub) {
+        return;
+      }
+      if (activeIndex < 0 || activeIndex >= fleetBuffer.length) {
+        heading.textContent = "No ship selected";
+        sub.textContent = "";
+        return;
+      }
+      var sh = fleetBuffer[activeIndex];
+      var ship = byId[sh.ship_id];
+      heading.textContent = ship ? ship.name || "Ship" : "New ship";
+      sub.textContent = ship
+        ? (ship.rate || "—") + " · " + (ship.class || "—")
+        : "Pick a ship type, then set upgrades and consumables.";
+    }
+
+    function renderRoster() {
+      rosterListEl.innerHTML = "";
+      var countEl = document.getElementById("fleet-roster-count");
+      for (var i = 0; i < fleetBuffer.length; i++) {
+        var li = document.createElement("li");
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "fleet-roster-item";
+        if (i === activeIndex) {
+          btn.classList.add("is-active");
+        }
+        btn.setAttribute("data-index", String(i));
+        btn.setAttribute("aria-pressed", i === activeIndex ? "true" : "false");
+        btn.textContent = rosterShipTitle(fleetBuffer[i]);
+        btn.addEventListener("click", function (ev) {
+          var idx = parseInt(ev.currentTarget.getAttribute("data-index"), 10);
+          selectEditorIndex(idx);
+        });
+        li.appendChild(btn);
+        rosterListEl.appendChild(li);
+      }
+      if (countEl) {
+        countEl.textContent =
+          fleetBuffer.length === 0
+            ? "0 ships"
+            : fleetBuffer.length === 1
+              ? "1 ship"
+              : fleetBuffer.length + " ships";
+      }
+    }
+
+    function renderEditor() {
+      var heading = document.getElementById("fleet-editor-heading");
+      var sub = document.getElementById("fleet-editor-sub");
+      if (!heading || !sub) {
+        return;
+      }
+      if (fleetBuffer.length === 0) {
+        editorMount.innerHTML = "";
+        editorCard = null;
+        activeIndex = -1;
+        heading.textContent = "No ships in fleet yet";
+        sub.textContent = "Use “Add ship” in the list on the right to create a row, then edit it here.";
+        return;
+      }
+      if (activeIndex < 0 || activeIndex >= fleetBuffer.length) {
+        activeIndex = 0;
+      }
+      if (!editorCard) {
+        editorCard = createShipCard(fleetBuffer[activeIndex]);
+        editorMount.innerHTML = "";
+        editorMount.appendChild(editorCard);
+      } else {
+        applyShipToEditor(editorCard, fleetBuffer[activeIndex]);
+      }
+      updateEditorChrome();
+    }
+
+    function selectEditorIndex(idx) {
+      if (idx < 0 || idx >= fleetBuffer.length) {
+        return;
+      }
+      syncEditorToBuffer();
+      activeIndex = idx;
+      renderRoster();
+      renderEditor();
+    }
+
+    function onEditorRemoveShip() {
+      if (activeIndex < 0 || activeIndex >= fleetBuffer.length) {
+        return;
+      }
+      fleetBuffer.splice(activeIndex, 1);
+      if (fleetBuffer.length === 0) {
+        activeIndex = -1;
+      } else if (activeIndex >= fleetBuffer.length) {
+        activeIndex = fleetBuffer.length - 1;
+      }
+      editorMount.innerHTML = "";
+      editorCard = null;
+      renderRoster();
+      renderEditor();
+      setStatus("");
+    }
+
+    function buildFleetPayload() {
+      syncEditorToBuffer();
+      return { version: 1, ships: fleetBuffer.slice() };
+    }
+
+    document.getElementById("fleet-add-ship").addEventListener("click", function () {
+      if (!shipsList.length) {
+        return;
+      }
+      syncEditorToBuffer();
+      if (fleetBuffer.length >= maxShips) {
+        setStatus("Maximum " + maxShips + " ships.", true);
+        return;
+      }
+      fleetBuffer.push({
+        instance_id: newInstanceId(),
+        ship_id: "",
+        upgrades: padUpgradeList({}),
+        consumables: ["", "", ""],
+      });
+      activeIndex = fleetBuffer.length - 1;
+      editorMount.innerHTML = "";
+      editorCard = null;
+      renderRoster();
+      renderEditor();
+      setStatus("");
+    });
+
+    document.getElementById("fleet-save").addEventListener("click", function () {
+      if (!shipsList.length) {
+        return;
+      }
+      var fleet = buildFleetPayload();
+      for (var i = 0; i < fleet.ships.length; i++) {
+        var s = fleet.ships[i];
+        if (!s.ship_id) {
+          setStatus("Each row needs a ship selected from the list.", true);
+          return;
+        }
+        for (var u = 0; u < 4; u++) {
+          var uv = (s.upgrades[u] || "").trim();
+          if (!uv) {
+            setStatus(
+              "Upgrade slots 1–4 need a value on every ship (use “Not Unlocked Yet” for slots 2–4 still locked in-game).",
+              true
+            );
+            return;
+          }
+          if (u === 0 && uv === NU_LABEL) {
+            setStatus("Upgrade slot 1 must be a real upgrade, not “Not Unlocked Yet”.", true);
+            return;
+          }
+        }
+      }
+      setStatus("Saving…");
+      fetch("/api/profile/ships", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fleet),
+      })
+        .then(function (r) {
+          if (r.status === 401) {
+            window.location.href = "/auth/login";
+            return Promise.reject(new Error("auth"));
+          }
+          return r.json().then(function (j) {
+            return { ok: r.ok, body: j };
+          });
+        })
+        .then(function (res) {
+          if (!res || !res.ok) {
+            var d = res && res.body && (res.body.detail || res.body.message);
+            throw new Error(typeof d === "string" ? d : JSON.stringify(d || res.body));
+          }
+          setStatus("Fleet saved.");
+        })
+        .catch(function (e) {
+          if (String(e.message) !== "auth") {
+            setStatus(String(e.message || e), true);
+          }
+        });
+    });
+
+    function loadFleet() {
+      if (!shipsList.length) {
+        setStatus("");
+        return;
+      }
+      setStatus("Loading…");
+      fetch("/api/profile/ships", { credentials: "same-origin" })
+        .then(function (r) {
+          if (r.status === 401) {
+            window.location.href = "/auth/login";
+            return Promise.reject(new Error("auth"));
+          }
+          return r.json();
+        })
+        .then(function (data) {
+          var ships = (data && data.ships) || [];
+          fleetBuffer = ships.map(function (s) {
+            return {
+              instance_id: s.instance_id || newInstanceId(),
+              ship_id: s.ship_id || "",
+              upgrades: padUpgradeList(s),
+              consumables: [
+                (s.consumables && s.consumables[0]) || "",
+                (s.consumables && s.consumables[1]) || "",
+                (s.consumables && s.consumables[2]) || "",
+              ],
+            };
+          });
+          activeIndex = fleetBuffer.length > 0 ? 0 : -1;
+          editorMount.innerHTML = "";
+          editorCard = null;
+          renderRoster();
+          renderEditor();
+          setStatus(fleetBuffer.length ? "" : "Add your first ship when ready.");
+        })
+        .catch(function (e) {
+          if (String(e.message) !== "auth") {
+            setStatus("Could not load fleet: " + (e.message || e), true);
+            fleetBuffer = [];
+            activeIndex = -1;
+            editorMount.innerHTML = "";
+            editorCard = null;
+            renderRoster();
+            renderEditor();
+          }
+        });
+    }
+
+    loadFleet();
+  })();
+</script>
+{% endblock %}

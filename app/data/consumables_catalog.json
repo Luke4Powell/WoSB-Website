@@ -1,0 +1,44 @@
+{
+  "groups": [
+    {
+      "id": "repair",
+      "label": "Repair Consumables",
+      "options": [
+        "Wooden Patches",
+        "Iron Patches",
+        "Bronze Patches",
+        "Wreckage Patches",
+        "Wooden Repair Kit",
+        "Iron Repair Kit",
+        "Bronze Repair Kit",
+        "Field Kit"
+      ]
+    },
+    {
+      "id": "general",
+      "label": "General Consumables",
+      "options": [
+        "Small Additional Sails",
+        "Large Additioal Sails",
+        "Small Plates",
+        "Large Plates",
+        "Smoke Bomb",
+        "Smoke Screen",
+        "Bribery",
+        "Black Double Powder",
+        "Red Double Powder",
+        "White Double Powder",
+        "Rum Ration",
+        "Filling Ration",
+        "Phosphorus",
+        "Powder Charge",
+        "Poseidon's Hook"
+      ]
+    },
+    {
+      "id": "group",
+      "label": "Group Consumables",
+      "options": ["Blue Signal Flare", "Red Signal Flare", "Yellow Signal Flare", "Horn"]
+    }
+  ]
+}

@@ -1,0 +1,1694 @@
+{% extends "base.html" %}
+{% block title %}Port battle planner — {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow">Tools</p>
+    <h1 class="page-head__title">Port battle planner</h1>
+    <p class="page-head__meta muted">Set guild windows and ports (GMT-6), then <strong>Generate</strong> to copy your report.</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost btn--sm" href="/tools">All tools</a>
+  </div>
+</header>
+
+<div class="grid grid--2">
+  <article class="card card--lift">
+    <div class="card__head">
+      <h2 class="card__title">Inputs</h2>
+      <span class="card__badge">GMT-6</span>
+    </div>
+    <form id="pb-form" class="pb-form">
+      <label class="pb-label">Days to generate (1–31)</label>
+      <input class="pb-input" type="number" id="pb-days" min="1" max="31" value="7" required />
+
+      <p class="pb-label" style="margin-top: 0.5rem">Guild windows &amp; ownership</p>
+      <p class="small muted" style="margin: 0 0 0.5rem">
+        Each guild: pick a <strong>2-hour attack window (GMT-6)</strong>, then add held ports with the
+        <strong>search box</strong> — type to filter, click or press Enter to add; remove with ✕ on each tag.
+      </p>
+      <datalist id="pb-ports-dl"></datalist>
+
+      <div class="pb-ownership">
+        <div class="pb-own-block" role="group" aria-labelledby="pb-own-guild-TIF">
+          <span class="pb-own-guild" id="pb-own-guild-TIF">TIF</span>
+          <div class="pb-own-controls">
+            <label class="pb-sublabel" for="pb-win-TIF">Attack window (GMT-6)</label>
+            <select class="pb-input" id="pb-win-TIF"></select>
+            <span class="pb-sublabel" id="pb-own-hold-lbl-TIF">Ports held</span>
+            <div class="pb-combo" id="pb-combo-wrap-TIF">
+              <div class="pb-combo__chips" id="pb-combo-chips-TIF"></div>
+              <div class="pb-combo__shell">
+                <input
+                  type="text"
+                  class="pb-input pb-combo__input"
+                  id="pb-combo-inp-TIF"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Type to search ports…"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="pb-combo-list-TIF"
+                  aria-labelledby="pb-own-guild-TIF pb-own-hold-lbl-TIF"
+                />
+                <ul class="pb-combo__list" id="pb-combo-list-TIF" role="listbox" hidden></ul>
+              </div>
+            </div>
+            <input type="hidden" id="pb-own-TIF" value="" />
+          </div>
+        </div>
+        <div class="pb-own-block" role="group" aria-labelledby="pb-own-guild-BWC">
+          <span class="pb-own-guild" id="pb-own-guild-BWC">BWC</span>
+          <div class="pb-own-controls">
+            <label class="pb-sublabel" for="pb-win-BWC">Attack window (GMT-6)</label>
+            <select class="pb-input" id="pb-win-BWC"></select>
+            <span class="pb-sublabel" id="pb-own-hold-lbl-BWC">Ports held</span>
+            <div class="pb-combo" id="pb-combo-wrap-BWC">
+              <div class="pb-combo__chips" id="pb-combo-chips-BWC"></div>
+              <div class="pb-combo__shell">
+                <input
+                  type="text"
+                  class="pb-input pb-combo__input"
+                  id="pb-combo-inp-BWC"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Type to search ports…"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="pb-combo-list-BWC"
+                  aria-labelledby="pb-own-guild-BWC pb-own-hold-lbl-BWC"
+                />
+                <ul class="pb-combo__list" id="pb-combo-list-BWC" role="listbox" hidden></ul>
+              </div>
+            </div>
+            <input type="hidden" id="pb-own-BWC" value="" />
+          </div>
+        </div>
+        <div class="pb-own-block" role="group" aria-labelledby="pb-own-guild-SVA">
+          <span class="pb-own-guild" id="pb-own-guild-SVA">SVA</span>
+          <div class="pb-own-controls">
+            <label class="pb-sublabel" for="pb-win-SVA">Attack window (GMT-6)</label>
+            <select class="pb-input" id="pb-win-SVA"></select>
+            <span class="pb-sublabel" id="pb-own-hold-lbl-SVA">Ports held</span>
+            <div class="pb-combo" id="pb-combo-wrap-SVA">
+              <div class="pb-combo__chips" id="pb-combo-chips-SVA"></div>
+              <div class="pb-combo__shell">
+                <input
+                  type="text"
+                  class="pb-input pb-combo__input"
+                  id="pb-combo-inp-SVA"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Type to search ports…"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="pb-combo-list-SVA"
+                  aria-labelledby="pb-own-guild-SVA pb-own-hold-lbl-SVA"
+                />
+                <ul class="pb-combo__list" id="pb-combo-list-SVA" role="listbox" hidden></ul>
+              </div>
+            </div>
+            <input type="hidden" id="pb-own-SVA" value="" />
+          </div>
+        </div>
+        <div class="pb-own-block" role="group" aria-labelledby="pb-own-guild-LP">
+          <span class="pb-own-guild" id="pb-own-guild-LP">LP</span>
+          <div class="pb-own-controls">
+            <label class="pb-sublabel" for="pb-win-LP">Attack window (GMT-6)</label>
+            <select class="pb-input" id="pb-win-LP"></select>
+            <span class="pb-sublabel" id="pb-own-hold-lbl-LP">Ports held</span>
+            <div class="pb-combo" id="pb-combo-wrap-LP">
+              <div class="pb-combo__chips" id="pb-combo-chips-LP"></div>
+              <div class="pb-combo__shell">
+                <input
+                  type="text"
+                  class="pb-input pb-combo__input"
+                  id="pb-combo-inp-LP"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Type to search ports…"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="pb-combo-list-LP"
+                  aria-labelledby="pb-own-guild-LP pb-own-hold-lbl-LP"
+                />
+                <ul class="pb-combo__list" id="pb-combo-list-LP" role="listbox" hidden></ul>
+              </div>
+            </div>
+            <input type="hidden" id="pb-own-LP" value="" />
+          </div>
+        </div>
+      </div>
+
+      <p class="pb-label" style="margin-top: 0.65rem">Transition rows</p>
+      <p class="small muted" style="margin: 0 0 0.5rem">
+        One row per port. <strong>remaining</strong> / <strong>available_in</strong> need a duration (e.g.
+        <code>1d 4h</code>). <strong>available</strong> can use <code>now</code> or leave blank.
+      </p>
+      <div class="pb-trans-wrap">
+        <div class="pb-trans-head" aria-hidden="true">
+          <span>Port</span>
+          <span>State</span>
+          <span>Time value</span>
+        </div>
+        <div id="pb-trans-rows" class="pb-trans-rows"></div>
+        <div class="pb-trans-toolbar">
+          <button type="button" class="btn btn--ghost btn--sm" id="pb-trans-add">Add row</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="pb-trans-remove">Remove last row</button>
+        </div>
+      </div>
+
+      <div class="pb-actions">
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-load-defaults">Load defaults</button>
+        <button type="submit" class="btn btn--primary btn--sm" id="pb-generate">Generate</button>
+      </div>
+      <p class="small muted" id="pb-status" aria-live="polite"></p>
+    </form>
+  </article>
+
+  <div class="pb-outputs-column">
+    <article class="card card--lift card--accent">
+      <div class="card__head">
+        <h2 class="card__title">Port battles by day</h2>
+      </div>
+      <p class="small muted" style="margin: 0 0 0.5rem">
+        Calendar (GMT-6). Button below copies the plain-text battles report.
+      </p>
+      <div class="pb-out-report-wrap">
+        <div id="pb-out-battle-ui" class="pb-report-ui" tabindex="0" role="region" aria-label="Port battles calendar">
+          <p class="small muted pb-report-placeholder">Generate to see the schedule.</p>
+        </div>
+        <pre id="pb-out-report-battles" class="pb-report-text-hidden" aria-hidden="true">—</pre>
+      </div>
+      <div class="pb-actions pb-actions--below-output">
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-copy-battles">Copy battles</button>
+      </div>
+    </article>
+
+    <article class="card card--lift card--accent">
+      <div class="card__head">
+        <h2 class="card__title">Protection timer placement</h2>
+      </div>
+      <p class="small muted" style="margin: 0 0 0.5rem">
+        Timer placement by day. Button below copies the plain-text placement report.
+      </p>
+      <div class="pb-out-report-wrap">
+        <div id="pb-out-placement-ui" class="pb-report-ui" tabindex="0" role="region" aria-label="Protection timer placement calendar">
+          <p class="small muted pb-report-placeholder">Generate to see placement by day.</p>
+        </div>
+        <pre id="pb-out-report-placement" class="pb-report-text-hidden" aria-hidden="true">—</pre>
+      </div>
+      <div class="pb-actions pb-actions--below-output">
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-copy-placement">Copy placement</button>
+      </div>
+    </article>
+
+    <article class="card card--lift card--accent">
+      <div class="card__head">
+        <h2 class="card__title">Transition week</h2>
+      </div>
+      <p class="small muted" style="margin: 0 0 0.5rem">
+        Actions and ordered checklist. <strong>Copy transition</strong> copies this section as plain text;
+        <strong>Copy all reports</strong> joins battles, placement, and transition.
+      </p>
+      <div class="pb-out-report-wrap">
+        <div
+          id="pb-out-transition-ui"
+          class="pb-report-ui pb-transition-ui"
+          tabindex="0"
+          role="region"
+          aria-label="Transition week and checklist"
+        >
+          <p class="small muted pb-report-placeholder">Generate to see transition guidance.</p>
+        </div>
+        <pre id="pb-out-report-transition" class="pb-report-text-hidden" aria-hidden="true">—</pre>
+      </div>
+      <div class="pb-actions pb-actions--below-output">
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-copy-transition">Copy transition</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-copy-all-reports">Copy all reports</button>
+      </div>
+    </article>
+
+    <article class="card card--lift card--accent">
+      <div class="card__head">
+        <h2 class="card__title">Discord battles</h2>
+      </div>
+      <p class="small muted" style="margin: 0 0 0.5rem">Discord-friendly snippet (weekday lines and timestamps). Button below copies it.</p>
+      <pre class="code pb-out" id="pb-out-discord" tabindex="0">—</pre>
+      <div class="pb-actions pb-actions--below-output">
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-copy-discord">Copy Discord</button>
+      </div>
+    </article>
+  </div>
+</div>
+
+<style>
+  .pb-outputs-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    min-width: 0;
+  }
+
+  .pb-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .pb-label {
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+    margin-top: 0.35rem;
+  }
+  .pb-input,
+  .pb-textarea {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: #1f1814;
+    color: var(--text, #f6efe3);
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 0.88rem;
+  }
+  .pb-textarea {
+    resize: vertical;
+    min-height: 6rem;
+  }
+  .pb-sublabel {
+    display: block;
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(232, 201, 120, 0.82);
+    margin: 0.15rem 0 0.2rem;
+  }
+  .pb-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+  }
+  .pb-actions--below-output {
+    margin-top: 0.55rem;
+    margin-bottom: 0;
+  }
+  .pb-out {
+    max-height: 280px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .pb-transition-ui {
+    max-height: min(58vh, 520px);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .pb-tr-section {
+    margin-bottom: 1.25rem;
+  }
+  .pb-tr-section:last-child {
+    margin-bottom: 0;
+  }
+  .pb-tr-section__title {
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(212, 168, 75, 0.35);
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+  }
+  .pb-tr-intro {
+    margin: 0 0 1rem;
+    line-height: 1.45;
+    font-size: 0.84rem;
+  }
+  .pb-tr-card {
+    border-radius: 10px;
+    border: 2px solid rgba(212, 168, 75, 0.38);
+    background: linear-gradient(165deg, rgba(52, 42, 32, 0.96) 0%, rgba(18, 14, 11, 0.9) 100%);
+    padding: 0.7rem 0.8rem 0.75rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .pb-tr-card:last-child {
+    margin-bottom: 0;
+  }
+  .pb-tr-card__port {
+    font-family: var(--font-display, serif);
+    font-weight: 800;
+    font-size: 1.02rem;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.12em;
+    text-decoration-color: rgba(212, 168, 75, 0.9);
+    color: var(--stucco, #f6efe3);
+    letter-spacing: 0.02em;
+  }
+  .pb-tr-card__meta {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: rgba(200, 188, 172, 0.95);
+  }
+  .pb-tr-card__status {
+    margin: 0.45rem 0 0.55rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 7px;
+    border-left: 3px solid rgba(212, 168, 75, 0.75);
+    background: rgba(0, 0, 0, 0.28);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #ebe4dc;
+  }
+  .pb-tr-detail {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.35rem 0.65rem;
+    align-items: start;
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+  .pb-tr-detail__k {
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(232, 201, 120, 0.78);
+    padding-top: 0.12rem;
+  }
+  .pb-tr-detail__v {
+    color: #e4dcd2;
+    word-break: break-word;
+  }
+  .pb-tr-detail__v--mono {
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 0.74rem;
+    color: rgba(180, 210, 220, 0.95);
+  }
+  .pb-tr-note {
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    color: var(--muted, #b8a99a);
+    font-style: italic;
+  }
+  .pb-tr-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .pb-tr-step {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    padding: 0.55rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid rgba(244, 234, 215, 0.14);
+    background: rgba(0, 0, 0, 0.22);
+  }
+  .pb-tr-step__n {
+    flex-shrink: 0;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.78rem;
+    background: rgba(212, 168, 75, 0.22);
+    color: var(--ochre-soft, #e8c978);
+    border: 1px solid rgba(212, 168, 75, 0.4);
+  }
+  .pb-tr-step__body {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.82rem;
+    line-height: 1.38;
+    color: var(--stucco, #f6efe3);
+  }
+  .pb-tr-step__body .pb-report-port {
+    font-size: inherit;
+  }
+
+  .pb-out-report-wrap {
+    position: relative;
+  }
+  .pb-report-text-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .pb-report-ui {
+    max-height: min(50vh, 440px);
+    overflow-y: auto;
+    padding: 0.5rem 0.35rem 0.65rem;
+    border-radius: 10px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.22));
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .pb-report-placeholder {
+    margin: 0.35rem 0.5rem;
+  }
+  .pb-report-calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+    padding: 0.25rem 0.35rem 1rem;
+  }
+  .pb-report-day {
+    border-radius: 10px;
+    border: 2px solid rgba(212, 168, 75, 0.42);
+    background: linear-gradient(165deg, rgba(52, 42, 32, 0.98) 0%, rgba(18, 14, 11, 0.92) 100%);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-shadow:
+      0 6px 22px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .pb-report-day__head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.55rem 0.65rem;
+    border-bottom: 2px solid rgba(212, 168, 75, 0.28);
+    background: linear-gradient(180deg, rgba(28, 22, 18, 0.95) 0%, rgba(12, 10, 8, 0.75) 100%);
+  }
+  .pb-report-day__weekday {
+    font-family: var(--font-display, serif);
+    font-weight: 700;
+    font-size: 1.08rem;
+    color: var(--ochre-soft, #e8c978);
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+  .pb-report-day__date {
+    font-family: ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: rgba(232, 201, 120, 0.85);
+  }
+  .pb-report-day__body {
+    padding: 0.45rem 0.5rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+  }
+  .pb-report-free {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: rgba(127, 180, 140, 0.95);
+  }
+  .pb-report-muted {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--muted, #b8a99a);
+  }
+  .pb-report-line {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.25rem 0.5rem;
+    align-items: baseline;
+    padding: 0.28rem 0;
+    border-bottom: 1px solid rgba(244, 234, 215, 0.08);
+    font-size: 0.82rem;
+  }
+  .pb-report-line:last-child {
+    border-bottom: none;
+  }
+  .pb-report-line__main {
+    font-weight: 500;
+    color: var(--stucco, #f6efe3);
+    line-height: 1.25;
+  }
+  .pb-report-port {
+    font-weight: 800;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.14em;
+    text-decoration-color: rgba(212, 168, 75, 0.9);
+    color: var(--stucco, #f6efe3);
+  }
+  .pb-report-line__ts {
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: rgba(180, 210, 220, 0.95);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .pb-ownership {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .pb-own-block {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.45rem 0.75rem;
+    align-items: start;
+    padding: 0.85rem 1rem 1rem;
+    border-radius: 10px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.28));
+    background: linear-gradient(165deg, rgba(35, 28, 22, 0.95) 0%, rgba(20, 16, 13, 0.55) 100%);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  @media (min-width: 520px) {
+    .pb-own-block {
+      grid-template-columns: 3.75rem minmax(0, 1fr);
+      padding: 0.95rem 1.1rem 1.05rem;
+    }
+  }
+  .pb-own-guild {
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--stucco, #f6efe3);
+    padding-top: 0.35rem;
+  }
+  @media (max-width: 519px) {
+    .pb-own-guild {
+      padding-top: 0;
+      margin-bottom: 0.15rem;
+    }
+  }
+  .pb-own-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .pb-combo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+  .pb-combo__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    min-height: 0;
+  }
+  .pb-combo__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: 100%;
+    padding: 0.2rem 0.35rem 0.2rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: rgba(42, 33, 26, 0.95);
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 0.8rem;
+    color: var(--stucco, #f6efe3);
+  }
+  .pb-combo__chip--warn {
+    border-color: rgba(196, 92, 62, 0.75);
+    color: #ffc9b8;
+  }
+  .pb-combo__chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 14rem;
+  }
+  .pb-combo__chip-x {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--stucco, #f6efe3);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .pb-combo__chip-x:hover {
+    background: rgba(196, 92, 62, 0.55);
+  }
+  .pb-combo__shell {
+    position: relative;
+    width: 100%;
+  }
+  .pb-combo__input {
+    width: 100%;
+  }
+  .pb-combo__list {
+    position: absolute;
+    z-index: 30;
+    left: 0;
+    right: 0;
+    top: calc(100% + 2px);
+    margin: 0;
+    padding: 0.25rem 0;
+    list-style: none;
+    max-height: 12rem;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: #1a1410;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  }
+  .pb-combo__opt {
+    padding: 0.4rem 0.65rem;
+    cursor: pointer;
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 0.85rem;
+    color: var(--stucco, #f6efe3);
+  }
+  .pb-combo__opt:hover,
+  .pb-combo__opt--active {
+    background: rgba(212, 168, 75, 0.18);
+  }
+
+  .pb-trans-wrap {
+    border-radius: 8px;
+    border: 2px solid var(--border-strong, rgba(244, 234, 215, 0.32));
+    background: rgba(0, 0, 0, 0.12);
+    padding: 0.5rem 0.55rem 0.55rem;
+  }
+  .pb-trans-head {
+    display: none;
+    gap: 0.45rem;
+    padding: 0 0.15rem 0.35rem;
+    font-family: var(--font-poster, system-ui, sans-serif);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ochre-soft, #e8c978);
+  }
+  @media (min-width: 640px) {
+    .pb-trans-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) 12.5rem minmax(0, 1fr);
+    }
+  }
+  .pb-trans-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .pb-tr-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid rgba(244, 234, 215, 0.12);
+  }
+  .pb-tr-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  @media (min-width: 640px) {
+    .pb-tr-row {
+      grid-template-columns: minmax(0, 1.35fr) 12.5rem minmax(0, 1fr);
+      gap: 0.45rem;
+      align-items: center;
+      padding-bottom: 0.45rem;
+    }
+  }
+  .pb-tr-row .pb-tr-state {
+    font-family: ui-monospace, "Cascadia Code", monospace;
+    font-size: 0.82rem;
+  }
+  .pb-trans-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.45rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(244, 234, 215, 0.12);
+  }
+</style>
+
+<script>
+  (function () {
+    const statusEl = document.getElementById("pb-status");
+    const guilds = ["TIF", "BWC", "SVA", "LP"];
+    const TRANSITION_STATES = [
+      { value: "remaining", label: "remaining — protection left" },
+      { value: "available", label: "available — can place now" },
+      { value: "available_in", label: "available_in — cooldown" },
+    ];
+
+    /** Twelve contiguous 2-hour slots covering the GMT-6 day (last ends at 24:00 for the calculator). */
+    const TWO_HOUR_WINDOWS_GMT6 = (function () {
+      const out = [];
+      for (let start = 0; start < 24; start += 2) {
+        const end = start + 2;
+        const sh = String(start).padStart(2, "0") + ":00";
+        const eh = String(end).padStart(2, "0") + ":00";
+        out.push({ value: sh + "-" + eh, label: sh + " – " + eh + " (GMT-6)" });
+      }
+      return out;
+    })();
+
+    function setStatus(msg, isErr) {
+      statusEl.textContent = msg || "";
+      statusEl.style.color = isErr ? "#ffb4b5" : "";
+    }
+
+    function initAttackWindowSelects() {
+      guilds.forEach(function (g) {
+        const sel = document.getElementById("pb-win-" + g);
+        sel.innerHTML = "";
+        const ph = document.createElement("option");
+        ph.value = "";
+        ph.textContent = "— Select window —";
+        sel.appendChild(ph);
+        TWO_HOUR_WINDOWS_GMT6.forEach(function (slot) {
+          const o = document.createElement("option");
+          o.value = slot.value;
+          o.textContent = slot.label;
+          sel.appendChild(o);
+        });
+      });
+    }
+
+    function normalizeSavedWindow(v) {
+      const s = String(v || "").trim();
+      if (s === "22:00-00:00") return "22:00-24:00";
+      return s;
+    }
+
+    function setWindowFromSaved(guild, windowStr) {
+      const sel = document.getElementById("pb-win-" + guild);
+      const v = normalizeSavedWindow(windowStr);
+      const standard = {};
+      TWO_HOUR_WINDOWS_GMT6.forEach(function (s) {
+        standard[s.value] = true;
+      });
+      if (!v) {
+        sel.value = "";
+        return;
+      }
+      if (standard[v]) {
+        sel.value = v;
+        return;
+      }
+      const cust = document.createElement("option");
+      cust.value = v;
+      cust.textContent = v + " (custom)";
+      sel.appendChild(cust);
+      sel.value = v;
+    }
+
+    function fillPortsDatalist(ports) {
+      const dl = document.getElementById("pb-ports-dl");
+      dl.innerHTML = "";
+      (ports || []).forEach(function (name) {
+        const o = document.createElement("option");
+        o.value = name;
+        dl.appendChild(o);
+      });
+    }
+
+    function parsePortList(s) {
+      return String(s || "")
+        .split(",")
+        .map(function (x) {
+          return x.trim();
+        })
+        .filter(Boolean);
+    }
+
+    const portComboByGuild = {};
+
+    function joinPortList(parts) {
+      return parts.join(", ");
+    }
+
+    /** Ports-held combobox: filterable list + chips (option 6). */
+    function createPortCombo(guild) {
+      const chipsEl = document.getElementById("pb-combo-chips-" + guild);
+      const input = document.getElementById("pb-combo-inp-" + guild);
+      const list = document.getElementById("pb-combo-list-" + guild);
+      const hidden = document.getElementById("pb-own-" + guild);
+      let catalog = [];
+      let selected = [];
+      let activeIndex = -1;
+      const maxList = 12;
+
+      function setAriaExpanded(open) {
+        input.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+
+      function syncHidden() {
+        hidden.value = joinPortList(selected);
+      }
+
+      function filtered() {
+        const q = input.value.trim().toLowerCase();
+        return catalog.filter(function (p) {
+          if (selected.indexOf(p) !== -1) return false;
+          if (!q) return true;
+          return p.toLowerCase().indexOf(q) !== -1;
+        });
+      }
+
+      function hideList() {
+        list.hidden = true;
+        activeIndex = -1;
+        list.innerHTML = "";
+        setAriaExpanded(false);
+      }
+
+      function renderList() {
+        const items = filtered().slice(0, maxList);
+        list.innerHTML = "";
+        if (items.length === 0) {
+          hideList();
+          return;
+        }
+        if (activeIndex >= items.length) activeIndex = items.length - 1;
+        items.forEach(function (p, idx) {
+          const li = document.createElement("li");
+          li.className = "pb-combo__opt" + (idx === activeIndex ? " pb-combo__opt--active" : "");
+          li.setAttribute("role", "option");
+          li.dataset.port = p;
+          li.textContent = p;
+          list.appendChild(li);
+        });
+        list.hidden = false;
+        setAriaExpanded(true);
+      }
+
+      function renderChips() {
+        chipsEl.innerHTML = "";
+        const inCat = {};
+        catalog.forEach(function (p) {
+          inCat[p] = true;
+        });
+        selected.forEach(function (name) {
+          const chip = document.createElement("span");
+          chip.className = "pb-combo__chip" + (inCat[name] ? "" : " pb-combo__chip--warn");
+          const lab = document.createElement("span");
+          lab.className = "pb-combo__chip-label";
+          lab.textContent = name;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "pb-combo__chip-x";
+          btn.setAttribute("aria-label", "Remove " + name);
+          btn.textContent = "×";
+          btn.addEventListener("mousedown", function (ev) {
+            ev.preventDefault();
+          });
+          btn.addEventListener("click", function () {
+            selected = selected.filter(function (x) {
+              return x !== name;
+            });
+            renderChips();
+            syncHidden();
+            renderList();
+            input.focus();
+          });
+          chip.appendChild(lab);
+          chip.appendChild(btn);
+          chipsEl.appendChild(chip);
+        });
+        syncHidden();
+      }
+
+      function addPort(name) {
+        const n = (name || "").trim();
+        if (!n || selected.indexOf(n) !== -1) return false;
+        selected.push(n);
+        input.value = "";
+        activeIndex = -1;
+        renderChips();
+        renderList();
+        return true;
+      }
+
+      function pickHighlightedOrFirst() {
+        const items = filtered().slice(0, maxList);
+        if (items.length === 0) return;
+        const pick =
+          activeIndex >= 0 && activeIndex < items.length ? items[activeIndex] : items[0];
+        addPort(pick);
+        hideList();
+        input.focus();
+      }
+
+      list.addEventListener("mousedown", function (ev) {
+        const t = ev.target.closest("li.pb-combo__opt");
+        if (!t) return;
+        ev.preventDefault();
+        addPort(t.dataset.port);
+        hideList();
+        input.focus();
+      });
+
+      input.addEventListener("input", function () {
+        activeIndex = -1;
+        renderList();
+      });
+
+      input.addEventListener("focus", function () {
+        renderList();
+      });
+
+      input.addEventListener("blur", function () {
+        setTimeout(function () {
+          hideList();
+        }, 180);
+      });
+
+      input.addEventListener("keydown", function (ev) {
+        const items = filtered().slice(0, maxList);
+        if (ev.key === "ArrowDown") {
+          ev.preventDefault();
+          if (items.length === 0) return;
+          if (list.hidden) activeIndex = -1;
+          activeIndex = Math.min(activeIndex + 1, items.length - 1);
+          if (activeIndex < 0) activeIndex = 0;
+          renderList();
+          return;
+        }
+        if (ev.key === "ArrowUp") {
+          ev.preventDefault();
+          if (items.length === 0) return;
+          activeIndex = Math.max(activeIndex - 1, 0);
+          renderList();
+          return;
+        }
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          hideList();
+          return;
+        }
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          if (!list.hidden && items.length > 0) {
+            pickHighlightedOrFirst();
+            return;
+          }
+          const q = input.value.trim();
+          if (q && catalog.indexOf(q) !== -1 && selected.indexOf(q) === -1) {
+            addPort(q);
+            hideList();
+          }
+        }
+      });
+
+      return {
+        setPorts: function (ports) {
+          catalog = (ports || []).slice().sort(function (a, b) {
+            return a.localeCompare(b, undefined, { sensitivity: "base" });
+          });
+          renderChips();
+          hideList();
+        },
+        setFromCsv: function (csv) {
+          selected = [];
+          parsePortList(csv).forEach(function (p) {
+            if (p && selected.indexOf(p) === -1) selected.push(p);
+          });
+          input.value = "";
+          hideList();
+          renderChips();
+        },
+        getCsv: function () {
+          return joinPortList(selected);
+        },
+      };
+    }
+
+    function setOwnershipForGuild(guild, csv) {
+      portComboByGuild[guild].setFromCsv(csv);
+    }
+
+    function ownershipCsvForGuild(guild) {
+      return portComboByGuild[guild].getCsv();
+    }
+
+    function createTransitionRow(port, state, value) {
+      const wrap = document.createElement("div");
+      wrap.className = "pb-tr-row";
+
+      const inpPort = document.createElement("input");
+      inpPort.type = "text";
+      inpPort.className = "pb-input pb-tr-port";
+      inpPort.setAttribute("list", "pb-ports-dl");
+      inpPort.setAttribute("placeholder", "Port name");
+      inpPort.setAttribute("spellcheck", "false");
+      inpPort.setAttribute("autocomplete", "off");
+      inpPort.value = port || "";
+
+      const selState = document.createElement("select");
+      selState.className = "pb-input pb-tr-state";
+      TRANSITION_STATES.forEach(function (opt) {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        selState.appendChild(o);
+      });
+      const st = (state || "remaining").toLowerCase();
+      if (["remaining", "available", "available_in"].indexOf(st) !== -1) selState.value = st;
+      else selState.value = "remaining";
+
+      const inpVal = document.createElement("input");
+      inpVal.type = "text";
+      inpVal.className = "pb-input pb-tr-value";
+      inpVal.setAttribute("placeholder", "e.g. 1d 4h or now");
+      inpVal.setAttribute("spellcheck", "false");
+      inpVal.value = value || "";
+
+      function syncValueForState() {
+        if (selState.value === "available" && !(inpVal.value || "").trim()) inpVal.value = "now";
+      }
+      selState.addEventListener("change", syncValueForState);
+
+      wrap.appendChild(inpPort);
+      wrap.appendChild(selState);
+      wrap.appendChild(inpVal);
+      return wrap;
+    }
+
+    function setTransitionRows(rows) {
+      const root = document.getElementById("pb-trans-rows");
+      root.innerHTML = "";
+      const arr = Array.isArray(rows) && rows.length ? rows : [{ port: "", state: "remaining", value: "" }];
+      arr.forEach(function (r) {
+        root.appendChild(createTransitionRow(r.port, r.state, r.value));
+      });
+    }
+
+    function collectTransitionRows() {
+      const out = [];
+      document.querySelectorAll("#pb-trans-rows .pb-tr-row").forEach(function (row) {
+        const port = row.querySelector(".pb-tr-port").value.trim();
+        const state = row.querySelector(".pb-tr-state").value.trim().toLowerCase();
+        let value = row.querySelector(".pb-tr-value").value.trim();
+        if (!port) return;
+        if (state === "available" && !value) value = "now";
+        out.push({ port: port, state: state, value: value });
+      });
+      return out;
+    }
+
+    function transitionAddRow() {
+      document.getElementById("pb-trans-rows").appendChild(createTransitionRow("", "remaining", ""));
+    }
+
+    function transitionRemoveLast() {
+      const root = document.getElementById("pb-trans-rows");
+      const rows = root.querySelectorAll(".pb-tr-row");
+      if (rows.length <= 1) {
+        setTransitionRows([{ port: "", state: "remaining", value: "" }]);
+        return;
+      }
+      rows[rows.length - 1].remove();
+    }
+
+    async function loadDefaults() {
+      setStatus("Loading defaults…");
+      const r = await fetch("/api/port-battle/defaults", { credentials: "same-origin" });
+      if (!r.ok) {
+        setStatus("Could not load defaults (" + r.status + ")", true);
+        return;
+      }
+      const d = await r.json();
+      document.getElementById("pb-days").value = String(parseInt(d.days, 10) || 7);
+      initAttackWindowSelects();
+      fillPortsDatalist(d.ports);
+      guilds.forEach(function (g) {
+        portComboByGuild[g].setPorts(d.ports || []);
+        setWindowFromSaved(g, (d.windows && d.windows[g]) || "");
+        setOwnershipForGuild(g, (d.ownership && d.ownership[g]) || "");
+      });
+      const rows = Array.isArray(d.transition_rows) ? d.transition_rows : [];
+      setTransitionRows(rows);
+      setStatus("Defaults loaded.");
+    }
+
+    initAttackWindowSelects();
+    guilds.forEach(function (g) {
+      portComboByGuild[g] = createPortCombo(g);
+    });
+
+    document.getElementById("pb-trans-add").addEventListener("click", function () {
+      transitionAddRow();
+    });
+    document.getElementById("pb-trans-remove").addEventListener("click", function () {
+      transitionRemoveLast();
+    });
+
+    document.getElementById("pb-load-defaults").addEventListener("click", function () {
+      loadDefaults().catch(function (e) {
+        setStatus(String(e), true);
+      });
+    });
+
+    document.getElementById("pb-form").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      const rows = collectTransitionRows();
+      const body = {
+        days: parseInt(document.getElementById("pb-days").value, 10),
+        windows: {},
+        ownership: {},
+        transition_rows: rows,
+      };
+      guilds.forEach(function (g) {
+        body.windows[g] = document.getElementById("pb-win-" + g).value;
+        body.ownership[g] = ownershipCsvForGuild(g);
+      });
+      setStatus("Generating…");
+      fetch("/api/port-battle/generate", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+        .then(function (r) {
+          return r.json().then(function (j) {
+            return { ok: r.ok, status: r.status, body: j };
+          });
+        })
+        .then(function (res) {
+          if (!res.ok) {
+            const detail = res.body && (res.body.detail || res.body.message);
+            throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail || res.body));
+          }
+          populateReportOutputs(res.body);
+          document.getElementById("pb-out-discord").textContent = res.body.discord || "";
+          setStatus("Done. Generated at " + (res.body.generated_at_gmt6 || "") + ".");
+        })
+        .catch(function (e) {
+          setStatus(String(e.message || e), true);
+        });
+    });
+
+    function clientSplitReportsFromFull(full) {
+      full = (full || "").trim();
+      if (!full) {
+        return { battles: "", placement: "", transition: "" };
+      }
+      var tKey = "TRANSITION WEEK ACTIONS";
+      var tIdx = full.indexOf(tKey);
+      var main = tIdx >= 0 ? full.slice(0, tIdx).replace(/\s+$/, "") : full;
+      var trans = tIdx >= 0 ? full.slice(tIdx).replace(/^\s+/, "") : "";
+      var pKey = "PROTECTION TIMER PLACEMENT";
+      var pIdx = main.indexOf(pKey);
+      var battles = pIdx >= 0 ? main.slice(0, pIdx).replace(/\s+$/, "") : main;
+      var placement = pIdx >= 0 ? main.slice(pIdx).replace(/^\s+/, "") : "";
+      return { battles: battles, placement: placement, transition: trans };
+    }
+
+    function normalizeReportParts(body) {
+      var rb = body.report_battles != null ? String(body.report_battles) : "";
+      var rp = body.report_placement != null ? String(body.report_placement) : "";
+      var rt = body.report_transition != null ? String(body.report_transition) : "";
+      rb = rb.replace(/\s+$/, "");
+      rp = rp.replace(/\s+$/, "");
+      rt = rt.replace(/^\s+/, "").replace(/\s+$/, "");
+      var full = (body.report || "").trim();
+      if (full) {
+        var s = clientSplitReportsFromFull(full);
+        if (!rb.trim()) rb = s.battles;
+        if (!rp.trim()) rp = s.placement;
+        if (!rt.trim()) rt = s.transition;
+      }
+      return { battles: rb.trim(), placement: rp.trim(), transition: rt.trim() };
+    }
+
+    function parseTransitionReport(raw) {
+      raw = (raw || "").trim();
+      if (!raw) {
+        return { intro: "", actionBlocks: [], checklistLines: [], hasChecklistSection: false };
+      }
+      var checklistHdr = "TRANSITION CHECKLIST (ORDERED)";
+      var actionsHdr = "TRANSITION WEEK ACTIONS";
+      var cx = raw.indexOf(checklistHdr);
+      var hasChecklistSection = cx >= 0;
+      var actionsPart = hasChecklistSection ? raw.slice(0, cx).trim() : raw;
+      var checklistPart = hasChecklistSection ? raw.slice(cx).trim() : "";
+
+      var lines = actionsPart.split("\n");
+      var i = 0;
+      if (lines[i] === actionsHdr) {
+        i++;
+      }
+      if (lines[i] && /^-{10,}$/.test(lines[i].trim())) {
+        i++;
+      }
+      var intro = "";
+      if (lines[i] && lines[i].trim()) {
+        intro = lines[i].trim();
+        i++;
+      }
+      while (i < lines.length && !lines[i].trim()) {
+        i++;
+      }
+      var bodyStr = lines.slice(i).join("\n").trim();
+      var actionBlocks = bodyStr ? bodyStr.split(/\n\n+/).map(function (b) {
+        return b.trim();
+      }).filter(Boolean) : [];
+
+      var checklistLines = [];
+      if (checklistPart) {
+        var cl = checklistPart.split("\n");
+        var j = 0;
+        if (cl[j] === checklistHdr) {
+          j++;
+        }
+        if (cl[j] && /^-{10,}$/.test(cl[j].trim())) {
+          j++;
+        }
+        while (j < cl.length && !cl[j].trim()) {
+          j++;
+        }
+        for (; j < cl.length; j++) {
+          var L = cl[j].trim();
+          if (L) {
+            checklistLines.push(L);
+          }
+        }
+      }
+      return {
+        intro: intro,
+        actionBlocks: actionBlocks,
+        checklistLines: checklistLines,
+        hasChecklistSection: hasChecklistSection,
+      };
+    }
+
+    function parsePortHeadLine(line) {
+      var pipe = line.indexOf(" | ");
+      var left = pipe >= 0 ? line.slice(0, pipe).trim() : line.trim();
+      var right = pipe >= 0 ? line.slice(pipe + 3).trim() : "";
+      var segs = left.split(" - ");
+      if (segs.length >= 3) {
+        var port = segs[0];
+        var pvp = segs[segs.length - 1];
+        var rate = segs.slice(1, -1).join(" - ");
+        return { port: port, rate: rate, pvp: pvp, status: right, raw: line };
+      }
+      return { port: null, rate: "", pvp: "", status: right, raw: line };
+    }
+
+    function renderTransitionStructured(text, root) {
+      root.innerHTML = "";
+      var t = (text || "").trim();
+      if (!t || t === "—") {
+        root.appendChild(placeholderP("No transition report for this run (add transition rows above if needed)."));
+        return;
+      }
+      var data = parseTransitionReport(t);
+
+      var sec1 = document.createElement("section");
+      sec1.className = "pb-tr-section";
+      var h1 = document.createElement("h3");
+      h1.className = "pb-tr-section__title";
+      h1.textContent = "Transition week actions";
+      sec1.appendChild(h1);
+      if (data.intro) {
+        var intro = document.createElement("p");
+        intro.className = "pb-tr-intro small muted";
+        intro.textContent = data.intro;
+        sec1.appendChild(intro);
+      }
+      if (!data.actionBlocks.length) {
+        var emptyA = document.createElement("p");
+        emptyA.className = "pb-tr-note";
+        emptyA.textContent = "No per-port actions in this section.";
+        sec1.appendChild(emptyA);
+      }
+      data.actionBlocks.forEach(function (block) {
+        if (/^no transition data entered/i.test(block)) {
+          var note = document.createElement("p");
+          note.className = "pb-tr-note";
+          note.textContent = block;
+          sec1.appendChild(note);
+          return;
+        }
+        var lines = block.split("\n").map(function (ln) {
+          return ln.replace(/\s+$/, "");
+        });
+        var card = document.createElement("article");
+        card.className = "pb-tr-card";
+        var head = lines[0] || "";
+        var parsed = parsePortHeadLine(head);
+        if (parsed.port) {
+          var portEl = document.createElement("div");
+          portEl.className = "pb-tr-card__port";
+          portEl.textContent = parsed.port;
+          card.appendChild(portEl);
+          var meta = document.createElement("p");
+          meta.className = "pb-tr-card__meta";
+          meta.appendChild(document.createTextNode(parsed.rate + " · " + parsed.pvp));
+          card.appendChild(meta);
+          if (parsed.status) {
+            var st = document.createElement("div");
+            st.className = "pb-tr-card__status";
+            st.textContent = parsed.status;
+            card.appendChild(st);
+          }
+        } else {
+          var fb = document.createElement("div");
+          fb.className = "pb-tr-card__status";
+          fb.textContent = head;
+          card.appendChild(fb);
+        }
+        for (var li = 1; li < lines.length; li++) {
+          var ln = lines[li].trim();
+          if (!ln) {
+            continue;
+          }
+          var detail = document.createElement("div");
+          detail.className = "pb-tr-detail";
+          var k = document.createElement("span");
+          k.className = "pb-tr-detail__k";
+          var v = document.createElement("span");
+          v.className = "pb-tr-detail__v";
+          if (/^next action:/i.test(ln)) {
+            k.textContent = "Next";
+            v.textContent = ln.replace(/^next action:\s*/i, "");
+          } else if (/^owner window/i.test(ln)) {
+            k.textContent = "Window";
+            v.textContent = ln.replace(/^\s*/, "");
+          } else if (/^suggested placement/i.test(ln)) {
+            k.textContent = "Place by";
+            v.className = "pb-tr-detail__v pb-tr-detail__v--mono";
+            v.textContent = ln.replace(/^\s*/, "");
+          } else {
+            k.textContent = "Note";
+            v.textContent = ln;
+          }
+          detail.appendChild(k);
+          detail.appendChild(v);
+          card.appendChild(detail);
+        }
+        sec1.appendChild(card);
+      });
+      root.appendChild(sec1);
+
+      if (data.hasChecklistSection) {
+        var sec2 = document.createElement("section");
+        sec2.className = "pb-tr-section";
+        var h2 = document.createElement("h3");
+        h2.className = "pb-tr-section__title";
+        h2.textContent = "Ordered checklist";
+        sec2.appendChild(h2);
+        if (!data.checklistLines.length) {
+          var emptyC = document.createElement("p");
+          emptyC.className = "pb-tr-note";
+          emptyC.textContent = "No checklist lines.";
+          sec2.appendChild(emptyC);
+        } else {
+          var isOnlyNote = data.checklistLines.length === 1 && !/^step\s+\d+/i.test(data.checklistLines[0]);
+          if (isOnlyNote) {
+            var p = document.createElement("p");
+            p.className = "pb-tr-note";
+            p.textContent = data.checklistLines[0];
+            sec2.appendChild(p);
+          } else {
+            var ul = document.createElement("ul");
+            ul.className = "pb-tr-steps";
+            data.checklistLines.forEach(function (line) {
+              var m = line.match(/^Step\s+(\d+):\s*(.+)$/i);
+              var li = document.createElement("li");
+              li.className = "pb-tr-step";
+              if (m) {
+                var badge = document.createElement("span");
+                badge.className = "pb-tr-step__n";
+                badge.textContent = m[1];
+                li.appendChild(badge);
+                var body = document.createElement("div");
+                body.className = "pb-tr-step__body";
+                var stepBody = m[2];
+                var token = " - place ";
+                var pdx = stepBody.indexOf(token);
+                if (pdx === -1) {
+                  body.textContent = stepBody;
+                } else {
+                  var leftPart = stepBody.slice(0, pdx).trim();
+                  var placeTail = stepBody.slice(pdx + token.length).trim();
+                  var segs = leftPart.split(" - ");
+                  if (segs.length >= 3) {
+                    var portN = segs[0];
+                    var rateN = segs.slice(1, -1).join(" - ");
+                    var pvpN = segs[segs.length - 1];
+                    var portSpan = document.createElement("span");
+                    portSpan.className = "pb-report-port";
+                    portSpan.textContent = portN;
+                    body.appendChild(portSpan);
+                    body.appendChild(document.createTextNode(" · " + rateN + " · " + pvpN + " — "));
+                    var mono = document.createElement("span");
+                    mono.className = "pb-tr-detail__v--mono";
+                    mono.textContent = "place " + placeTail;
+                    body.appendChild(mono);
+                  } else {
+                    body.textContent = stepBody;
+                  }
+                }
+                li.appendChild(body);
+              } else {
+                var one = document.createElement("div");
+                one.className = "pb-tr-step__body";
+                one.textContent = line;
+                li.appendChild(one);
+              }
+              ul.appendChild(li);
+            });
+            sec2.appendChild(ul);
+          }
+        }
+        root.appendChild(sec2);
+      }
+    }
+
+    function placeholderP(msg) {
+      var p = document.createElement("p");
+      p.className = "small muted pb-report-placeholder";
+      p.textContent = msg;
+      return p;
+    }
+
+    function populateReportOutputs(body) {
+      var battleUi = document.getElementById("pb-out-battle-ui");
+      var placementUi = document.getElementById("pb-out-placement-ui");
+      var transUi = document.getElementById("pb-out-transition-ui");
+      var preB = document.getElementById("pb-out-report-battles");
+      var preP = document.getElementById("pb-out-report-placement");
+      var preT = document.getElementById("pb-out-report-transition");
+      var parts = normalizeReportParts(body);
+      var schedule = body.report_schedule;
+      var anyText = parts.battles || parts.placement || parts.transition;
+
+      preB.textContent = parts.battles || "—";
+      preP.textContent = parts.placement || "—";
+      preT.textContent = parts.transition || "—";
+
+      battleUi.innerHTML = "";
+      placementUi.innerHTML = "";
+      transUi.innerHTML = "";
+
+      if (!anyText) {
+        battleUi.appendChild(placeholderP("Generate to see the schedule."));
+        placementUi.appendChild(placeholderP("Generate to see placement by day."));
+        transUi.appendChild(placeholderP("Generate to see transition guidance."));
+        return;
+      }
+
+      renderTransitionStructured(parts.transition, transUi);
+
+      if (!schedule || !Array.isArray(schedule.battle_days)) {
+        var fb = document.createElement("pre");
+        fb.className = "code pb-out";
+        fb.style.maxHeight = "min(50vh, 440px)";
+        fb.textContent = body.report || anyText;
+        battleUi.appendChild(fb);
+        placementUi.appendChild(
+          placeholderP("Calendar needs schedule data — use Copy battles / Copy placement for text.")
+        );
+        return;
+      }
+
+      function battleRowEl(row) {
+        const r = document.createElement("div");
+        r.className = "pb-report-line";
+        const main = document.createElement("div");
+        main.className = "pb-report-line__main";
+        const port = document.createElement("span");
+        port.className = "pb-report-port";
+        port.textContent = row.port;
+        main.appendChild(port);
+        main.appendChild(document.createTextNode(" · " + row.rate + " · " + row.pvp));
+        const ts = document.createElement("div");
+        ts.className = "pb-report-line__ts";
+        ts.textContent = row.time_label;
+        r.appendChild(main);
+        r.appendChild(ts);
+        return r;
+      }
+
+      function placementRowEl(row) {
+        const r = document.createElement("div");
+        r.className = "pb-report-line";
+        const main = document.createElement("div");
+        main.className = "pb-report-line__main";
+        const port = document.createElement("span");
+        port.className = "pb-report-port";
+        port.textContent = row.port;
+        main.appendChild(port);
+        main.appendChild(document.createTextNode(" — place " + row.timer_h + "h"));
+        const ts = document.createElement("div");
+        ts.className = "pb-report-line__ts";
+        ts.textContent = row.at_label;
+        r.appendChild(main);
+        r.appendChild(ts);
+        return r;
+      }
+
+      function dayGrid(days, mode) {
+        const grid = document.createElement("div");
+        grid.className = "pb-report-calendar";
+        days.forEach(function (d) {
+          const card = document.createElement("article");
+          card.className = "pb-report-day";
+          const head = document.createElement("header");
+          head.className = "pb-report-day__head";
+          const w = document.createElement("span");
+          w.className = "pb-report-day__weekday";
+          w.textContent = d.weekday;
+          const dt = document.createElement("span");
+          dt.className = "pb-report-day__date";
+          dt.textContent = d.date;
+          head.appendChild(w);
+          head.appendChild(dt);
+          card.appendChild(head);
+          const body = document.createElement("div");
+          body.className = "pb-report-day__body";
+          if (mode === "battle") {
+            if (d.free_night) {
+              const b = document.createElement("p");
+              b.className = "pb-report-free";
+              b.textContent = "Free night";
+              body.appendChild(b);
+            } else {
+              d.battles.forEach(function (row) {
+                body.appendChild(battleRowEl(row));
+              });
+            }
+          } else {
+            if (d.no_action) {
+              const b = document.createElement("p");
+              b.className = "pb-report-muted";
+              b.textContent = "No timer placement this day.";
+              body.appendChild(b);
+            } else {
+              d.rows.forEach(function (row) {
+                body.appendChild(placementRowEl(row));
+              });
+            }
+          }
+          card.appendChild(body);
+          grid.appendChild(card);
+        });
+        return grid;
+      }
+
+      battleUi.appendChild(dayGrid(schedule.battle_days, "battle"));
+      placementUi.appendChild(dayGrid(schedule.placement_days, "placement"));
+    }
+
+    function copyPre(id, okMsg) {
+      const el = document.getElementById(id);
+      const t = el.textContent || "";
+      if (!t.trim() || t.trim() === "—") {
+        setStatus("Nothing to copy yet.", true);
+        return;
+      }
+      navigator.clipboard.writeText(t).then(
+        function () {
+          setStatus(okMsg || "Copied.");
+        },
+        function () {
+          setStatus("Copy failed — select text manually.", true);
+        }
+      );
+    }
+
+    function copyJoinedReportPres() {
+      function chunk(id) {
+        var t = document.getElementById(id).textContent.trim();
+        return t && t !== "—" ? t : "";
+      }
+      var a = chunk("pb-out-report-battles");
+      var b = chunk("pb-out-report-placement");
+      var c = chunk("pb-out-report-transition");
+      var parts = [a, b, c].filter(Boolean);
+      if (!parts.length) {
+        setStatus("Nothing to copy yet.", true);
+        return;
+      }
+      navigator.clipboard.writeText(parts.join("\n\n")).then(
+        function () {
+          setStatus("Copied all reports.");
+        },
+        function () {
+          setStatus("Copy failed — select text manually.", true);
+        }
+      );
+    }
+
+    document.getElementById("pb-copy-battles").addEventListener("click", function () {
+      copyPre("pb-out-report-battles", "Copied battles report.");
+    });
+    document.getElementById("pb-copy-placement").addEventListener("click", function () {
+      copyPre("pb-out-report-placement", "Copied placement report.");
+    });
+    document.getElementById("pb-copy-transition").addEventListener("click", function () {
+      copyPre("pb-out-report-transition", "Copied transition report.");
+    });
+    document.getElementById("pb-copy-all-reports").addEventListener("click", function () {
+      copyJoinedReportPres();
+    });
+    document.getElementById("pb-copy-discord").addEventListener("click", function () {
+      copyPre("pb-out-discord", "Copied Discord snippet.");
+    });
+
+    loadDefaults().catch(function () {
+      setStatus("Open the page while signed in, then try Load defaults again.", true);
+    });
+  })();
+</script>
+{% endblock %}

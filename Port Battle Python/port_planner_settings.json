@@ -1,0 +1,22 @@
+{
+  "days": "7",
+  "windows": {
+    "TIF": "18:00-20:00",
+    "BWC": "18:00-20:00",
+    "SVA": "22:00-00:00",
+    "LP": "18:00-20:00"
+  },
+  "ownership": {
+    "TIF": "Charleston, Fiji, Northside",
+    "BWC": "Aruba, Severoangelsk",
+    "SVA": "North Bastion",
+    "LP": ""
+  },
+  "transition_rows": [
+    {
+      "port": "Aruba",
+      "state": "remaining",
+      "value": "1d 2h 32m"
+    }
+  ]
+}

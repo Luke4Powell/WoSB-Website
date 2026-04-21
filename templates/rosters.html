@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Rosters — {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow">Port battles</p>
+    <h1 class="page-head__title">Rosters</h1>
+    <p class="page-head__meta muted">
+      Choose <strong>Alliance</strong> or <strong>Guild</strong>, pick a rate (1–6), then use <strong>Roster A</strong>
+      and <strong>Roster B</strong> for that rate.
+    </p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost btn--sm" href="/dashboard">Dashboard</a>
+    <a class="btn btn--primary btn--sm" href="/tools">Tools</a>
+  </div>
+</header>
+
+<nav class="roster-categories" aria-label="Roster scope">
+  <a
+    class="roster-cat{% if view == 'alliance' %} roster-cat--active{% endif %}"
+    href="{{ roster_board_url('alliance', rate) }}"
+    >Alliance</a
+  >
+  {% if guild_choices %}
+  <a
+    class="roster-cat{% if view == 'guild' %} roster-cat--active{% endif %}"
+    href="{{ roster_board_url('guild', rate, current_guild or guild_choices[0].slug) }}"
+    >Guild</a
+  >
+  {% else %}
+  <span class="roster-cat roster-cat--disabled" title="Guild roster not available for your account">Guild</span>
+  {% endif %}
+</nav>
+
+{% if view == "guild" %}
+<form method="get" class="roster-guild-bar card card--lift">
+  <input type="hidden" name="view" value="guild" />
+  <input type="hidden" name="rate" value="{{ rate }}" />
+  <label class="roster-guild-bar__label">
+    <span class="roster-guild-bar__k">Guild</span>
+    <select class="roster-guild-bar__select" name="guild" aria-label="Guild roster" onchange="this.form.submit()">
+      {% for g in guild_choices %}
+      <option value="{{ g.slug }}" {% if g.slug == current_guild %}selected{% endif %}>{{ g.tag }} — {{ g.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+</form>
+{% endif %}
+
+<nav class="roster-rate-shell card card--lift" aria-label="Port battle rate">
+  <div class="roster-rate-shell__head">
+    <span class="roster-rate-shell__title">Rate {{ rate }} of 6</span>
+    <div class="roster-rate-shell__cycle">
+      {% if rate > 1 %}
+      <a class="btn btn--ghost btn--sm" href="{{ roster_board_url(view, rate - 1, current_guild) }}">Prev rate</a>
+      {% else %}
+      <span class="btn btn--ghost btn--sm roster-rate-shell__dead">Prev rate</span>
+      {% endif %}
+      {% if rate < 6 %}
+      <a class="btn btn--ghost btn--sm" href="{{ roster_board_url(view, rate + 1, current_guild) }}">Next rate</a>
+      {% else %}
+      <span class="btn btn--ghost btn--sm roster-rate-shell__dead">Next rate</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="roster-rate-pills" role="tablist" aria-label="Jump to rate">
+    {% for r in rates %}
+    <a
+      role="tab"
+      aria-selected="{% if r == rate %}true{% else %}false{% endif %}"
+      class="roster-rate-pill{% if r == rate %} roster-rate-pill--active{% endif %}"
+      href="{{ roster_board_url(view, r, current_guild) }}"
+      >Rate {{ r }}</a
+    >
+    {% endfor %}
+  </div>
+</nav>
+
+<div class="roster-ab-grid">
+  <article class="card card--lift">
+    <div class="card__head">
+      <h2 class="card__title">Roster A</h2>
+      <span class="card__badge card__badge--muted">Rate {{ rate }}</span>
+    </div>
+    <p class="card__lede small muted">
+      {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — line-up for this rate (storage next).
+    </p>
+    <div class="roster-slot roster-slot--empty"><span class="muted">—</span></div>
+  </article>
+  <article class="card card--lift">
+    <div class="card__head">
+      <h2 class="card__title">Roster B</h2>
+      <span class="card__badge card__badge--muted">Rate {{ rate }}</span>
+    </div>
+    <p class="card__lede small muted">
+      {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — second line for the same rate.
+    </p>
+    <div class="roster-slot roster-slot--empty"><span class="muted">—</span></div>
+  </article>
+</div>
+{% endblock %}

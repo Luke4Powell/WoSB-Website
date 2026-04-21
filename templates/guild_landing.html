@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ guild.tag }} — {{ app_name }}{% endblock %}
+{% block content %}
+{% if guild.hero_image %}
+<div class="guild-hero" style="background-image: url('{{ guild.hero_image }}');" role="img" aria-label="{{ guild.name }} banner"></div>
+{% else %}
+<div class="guild-hero guild-hero--placeholder" aria-hidden="true">
+  <span class="guild-hero__tag">{{ guild.tag }}</span>
+  <span class="guild-hero__hint">Banner coming soon</span>
+</div>
+{% endif %}
+
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow"><a href="/" class="text-bright">Spanish Faction</a> · {{ guild.tag }}</p>
+    <h1 class="page-head__title">{{ guild.name }}</h1>
+    <p class="page-head__meta muted">{{ guild.slogan }}</p>
+  </div>
+  <div class="page-head__actions">
+    {% if user %}
+    <a class="btn btn--ghost btn--sm" href="/rosters?view=guild&amp;guild={{ guild.slug }}&amp;rate=1">Guild roster</a>
+    <a class="btn btn--ghost btn--sm" href="/tools">Tools</a>
+    {% else %}
+    <a class="btn btn--discord btn--sm" href="/auth/login">Sign in</a>
+    {% endif %}
+  </div>
+</header>
+
+<section class="card card--lift">
+  <div class="card__head">
+    <h2 class="card__title">Port orders</h2>
+    <span class="card__badge card__badge--muted">Editable</span>
+  </div>
+  <p class="card__lede">{{ guild.intro }}</p>
+</section>
+
+<section class="card card--lift">
+  <div class="card__head">
+    <h2 class="card__title">Crew with guild role</h2>
+    <span class="card__badge">{{ members_total }} aboard</span>
+  </div>
+  {% if members_note %}
+  <p class="card__lede small muted">{{ members_note }}</p>
+  {% endif %}
+  {% if members %}
+  <ul class="guild-member-list">
+    {% for m in members %}
+    <li class="guild-member">
+      {% if m.avatar_hash %}
+      <img
+        class="guild-member__avatar"
+        src="https://cdn.discordapp.com/avatars/{{ m.id }}/{{ m.avatar_hash }}.png?size=64"
+        alt=""
+        width="40"
+        height="40"
+      />
+      {% else %}
+      {% set nm = m.nick or m.global_name or m.username or "?" %}
+      <span class="guild-member__avatar guild-member__avatar--fallback" aria-hidden="true">{{ nm[0]|e }}</span>
+      {% endif %}
+      <span class="guild-member__name">{{ (m.nick or m.global_name or m.username)|e }}</span>
+      <span class="guild-member__handle muted small">@{{ m.username|e }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if members_total > members|length %}
+  <p class="small muted">Showing {{ members|length }} of {{ members_total }} (cap for page size).</p>
+  {% endif %}
+  {% elif members_note is none %}
+  <p class="card__lede muted">No members found with this guild role yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

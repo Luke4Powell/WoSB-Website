@@ -1,0 +1,73 @@
+{
+  "groups": [
+    {
+      "id": "slot_availability",
+      "label": "Slot availability",
+      "options": ["Not Unlocked Yet"]
+    },
+    {
+      "id": "speed",
+      "label": "Speed Upgrades",
+      "options": ["Maneuverable Helm", "Reinforced Masts", "Lightweight Hull"]
+    },
+    {
+      "id": "expeditionary",
+      "label": "Expeditionary Upgrades",
+      "options": [
+        "Small Hooks",
+        "Combat Crow's Nest",
+        "Sturdy Frames",
+        "Double Hold",
+        "Extra Ballast",
+        "Cellars",
+        "Extra Bunks"
+      ]
+    },
+    {
+      "id": "protection",
+      "label": "Protection Upgrades",
+      "options": [
+        "Repair Arsenal",
+        "Iron Plating",
+        "Copper Plating",
+        "Iron Ram",
+        "Reinforced bolt Ropes",
+        "Teak Frames"
+      ]
+    },
+    {
+      "id": "combat",
+      "label": "Combat Upgrades",
+      "options": [
+        "Upper Deck",
+        "Ammunition Cradles",
+        "Advanced Gun Carriages",
+        "Incendiary Mixture",
+        "Fortified Ports",
+        "Combat Arsenal",
+        "Reinforced Cannons"
+      ]
+    },
+    {
+      "id": "unusual",
+      "label": "Unusual Upgrades",
+      "options": [
+        "Strong Beams",
+        "Portable Chest",
+        "High Helm Port",
+        "Structural Expansion",
+        "Emergency Powder Charge"
+      ]
+    },
+    {
+      "id": "mortar",
+      "label": "Mortar Upgrades",
+      "options": [
+        "Long-Range Mortars",
+        "Reinforced centre-line",
+        "Lightweight Construction",
+        "Swivel Mortars"
+      ]
+    }
+  ]
+}
