@@ -1,8 +1,0 @@
-{
-  "git.autofetch": true,
-  "git.confirmSync": false,
-  "git.enableSmartCommit": true,
-  "git.postCommitCommand": "push",
-  "git.showPushSuccessNotification": true,
-  "scm.alwaysShowRepositories": true
-}
