@@ -4,24 +4,79 @@ Python **FastAPI** app with **Discord OAuth**, signed **sessions**, and a small 
 
 ## Local setup
 
-1. Create a virtual environment and install dependencies:
+1. Use Python 3.12 for this project (`.python-version` and `pyproject.toml` both enforce this policy):
+
+PowerShell (Windows):
 
 ```powershell
-cd "c:\Users\clone\OneDrive\Desktop\WoSB Website"
-python -m venv .venv
+py -3.12 --version
+```
+
+Bash (Linux/macOS):
+
+```bash
+python3.12 --version
+```
+
+2. Create a virtual environment and install dependencies:
+
+PowerShell (Windows):
+
+```powershell
+cd "C:\path\to\WoSB-Website"
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-2. Copy `.env.example` to `.env` and fill in Discord values (see below).
+Bash (Linux/macOS):
 
-3. Run the app:
+```bash
+cd /path/to/WoSB-Website
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-```powershell
+3. Copy `.env.example` to `.env` and fill in Discord values (see below).
+
+4. Run the app:
+
+```bash
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Open `http://127.0.0.1:8000`.
+
+## Environment recovery (6 months later)
+
+If the project breaks after OS or Python updates, rebuild from a clean venv:
+
+PowerShell (Windows):
+
+```powershell
+cd "C:\path\to\WoSB-Website"
+if (Test-Path .venv) { Remove-Item -Recurse -Force .venv }
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Bash (Linux/macOS):
+
+```bash
+cd /path/to/WoSB-Website
+rm -rf .venv
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
 ## Discord application
 
