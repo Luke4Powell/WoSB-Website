@@ -67,7 +67,7 @@ async def fetch_guild_member(settings: Settings, discord_user_id: str) -> dict |
         return r.json()
 
 
-def map_roles_to_flags(settings: Settings, role_ids: list[str]) -> tuple[bool, bool, bool]:
+def map_roles_to_flags(settings: Settings, role_ids: list[str]) -> tuple[bool, bool, bool, bool]:
     ids = {str(r).strip() for r in role_ids if r is not None and str(r).strip()}
     admiral = bool(
         (rid := str(settings.discord_role_admiral_id or "").strip()) and rid in ids
@@ -76,7 +76,8 @@ def map_roles_to_flags(settings: Settings, role_ids: list[str]) -> tuple[bool, b
     alliance = bool(
         (rid := str(settings.discord_role_alliance_leader_id or "").strip()) and rid in ids
     )
-    return admiral, leader, alliance
+    officer = bool((rid := str(settings.discord_role_officer_id or "").strip()) and rid in ids)
+    return admiral, leader, alliance, officer
 
 
 async def fetch_members_with_role(

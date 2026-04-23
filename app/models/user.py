@@ -22,6 +22,7 @@ class User(Base):
     is_admiral: Mapped[bool] = mapped_column(Boolean(), default=False)
     is_leader: Mapped[bool] = mapped_column(Boolean(), default=False)
     is_alliance_leader: Mapped[bool] = mapped_column(Boolean(), default=False)
+    is_officer: Mapped[bool] = mapped_column(Boolean(), default=False)
 
     home_guild_tag: Mapped[str | None] = mapped_column(String(32), nullable=True)
     ships_json: Mapped[str | None] = mapped_column(Text(), nullable=True)
@@ -39,3 +40,8 @@ class User(Base):
 
     def can_edit_alliance_team(self) -> bool:
         return self.is_alliance_leader
+
+    def can_manage_roster_assignments(self) -> bool:
+        return bool(
+            self.is_officer or self.is_admiral or self.is_leader or self.is_alliance_leader
+        )

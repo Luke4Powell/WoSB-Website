@@ -3,11 +3,11 @@
 {% block content %}
 <header class="page-head page-head--compact">
   <div>
-    <p class="eyebrow">Port battles</p>
+    <p class="eyebrow">Roster board</p>
     <h1 class="page-head__title">Rosters</h1>
     <p class="page-head__meta muted">
-      Choose <strong>Alliance</strong> or <strong>Guild</strong>, pick a rate (1–6), then use <strong>Roster A</strong>
-      and <strong>Roster B</strong> for that rate.
+      Pick a rate (1–6), then open <strong>Roster A</strong> or <strong>Roster B</strong>. Switch scope with Alliance / Guild
+      below.
     </p>
   </div>
   <div class="page-head__actions">
@@ -15,6 +15,20 @@
     <a class="btn btn--primary btn--sm" href="/tools">Tools</a>
   </div>
 </header>
+
+<div
+  class="roster-scope-banner {% if view == 'alliance' %}roster-scope-banner--alliance{% else %}roster-scope-banner--guild{% endif %}"
+  role="region"
+  aria-label="Current roster scope"
+>
+  {% if view == "alliance" %}
+  <span class="roster-scope-banner__title"><strong>Alliance</strong> roster</span>
+  <span class="roster-scope-banner__sub muted">Alliance-wide line-ups for each port battle rate.</span>
+  {% else %}
+  <span class="roster-scope-banner__title"><strong>{{ current_guild_name }}</strong> <span class="roster-scope-banner__tag">Guild</span></span>
+  <span class="roster-scope-banner__sub muted">Guild roster for this faction — same rates as the alliance board.</span>
+  {% endif %}
+</div>
 
 <nav class="roster-categories" aria-label="Roster scope">
   <a
@@ -51,18 +65,6 @@
 <nav class="roster-rate-shell card card--lift" aria-label="Port battle rate">
   <div class="roster-rate-shell__head">
     <span class="roster-rate-shell__title">Rate {{ rate }} of 6</span>
-    <div class="roster-rate-shell__cycle">
-      {% if rate > 1 %}
-      <a class="btn btn--ghost btn--sm" href="{{ roster_board_url(view, rate - 1, current_guild) }}">Prev rate</a>
-      {% else %}
-      <span class="btn btn--ghost btn--sm roster-rate-shell__dead">Prev rate</span>
-      {% endif %}
-      {% if rate < 6 %}
-      <a class="btn btn--ghost btn--sm" href="{{ roster_board_url(view, rate + 1, current_guild) }}">Next rate</a>
-      {% else %}
-      <span class="btn btn--ghost btn--sm roster-rate-shell__dead">Next rate</span>
-      {% endif %}
-    </div>
   </div>
   <div class="roster-rate-pills" role="tablist" aria-label="Jump to rate">
     {% for r in rates %}
@@ -84,9 +86,34 @@
       <span class="card__badge card__badge--muted">Rate {{ rate }}</span>
     </div>
     <p class="card__lede small muted">
-      {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — line-up for this rate (storage next).
+      {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — line-up for this rate.
     </p>
+    {% if roster_a_players %}
+    <ul class="roster-lineup">
+      {% for p in roster_a_players %}
+      <li class="roster-lineup__row roster-player-row" data-slots="3">
+        <span class="roster-player-row__slot">{{ tier_display }}</span>
+        <span class="roster-player-row__slot roster-player-row__slot--start">{{ roster_player_display_name(p) }}</span>
+        <div class="roster-player-row__slot roster-player-row__slot--actions">
+          {% if can_manage_rosters %}
+          <form class="roster-player-row__form" method="post" action="/rosters/assignment">
+            <input type="hidden" name="action" value="remove" />
+            <input type="hidden" name="view" value="{{ view }}" />
+            <input type="hidden" name="rate" value="{{ rate }}" />
+            <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
+            <input type="hidden" name="user_id" value="{{ p.id }}" />
+            <button type="submit" class="roster-action-btn roster-action-btn--remove">Remove from Roster</button>
+          </form>
+          {% else %}
+          <span class="roster-player-row__placeholder">—</span>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
     <div class="roster-slot roster-slot--empty"><span class="muted">—</span></div>
+    {% endif %}
   </article>
   <article class="card card--lift">
     <div class="card__head">
@@ -96,7 +123,114 @@
     <p class="card__lede small muted">
       {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — second line for the same rate.
     </p>
+    {% if roster_b_players %}
+    <ul class="roster-lineup">
+      {% for p in roster_b_players %}
+      <li class="roster-lineup__row roster-player-row" data-slots="3">
+        <span class="roster-player-row__slot">{{ tier_display }}</span>
+        <span class="roster-player-row__slot roster-player-row__slot--start">{{ roster_player_display_name(p) }}</span>
+        <div class="roster-player-row__slot roster-player-row__slot--actions">
+          {% if can_manage_rosters %}
+          <form class="roster-player-row__form" method="post" action="/rosters/assignment">
+            <input type="hidden" name="action" value="remove" />
+            <input type="hidden" name="view" value="{{ view }}" />
+            <input type="hidden" name="rate" value="{{ rate }}" />
+            <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
+            <input type="hidden" name="user_id" value="{{ p.id }}" />
+            <button type="submit" class="roster-action-btn roster-action-btn--remove">Remove from Roster</button>
+          </form>
+          {% else %}
+          <span class="roster-player-row__placeholder">—</span>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
     <div class="roster-slot roster-slot--empty"><span class="muted">—</span></div>
+    {% endif %}
   </article>
 </div>
+
+<section class="card card--lift roster-available" id="available-players" aria-labelledby="available-players-heading">
+  <div class="card__head">
+    <h2 class="card__title" id="available-players-heading">Available players</h2>
+    <span class="card__badge card__badge--muted">{{ available_players | length }}</span>
+  </div>
+  {% if view == "alliance" %}
+  <p class="card__lede small muted" style="margin-top: 0">
+    Everyone with a guild tag in TIF, BWC, SVA, or LP — use this pool when filling alliance rosters.
+  </p>
+  {% else %}
+  <p class="card__lede small muted" style="margin-top: 0">
+    Members assigned to <strong>{{ current_guild_name }}</strong> on this site (same guild tag as this roster).
+  </p>
+  {% endif %}
+  {% if available_players %}
+  <ul class="roster-available__list">
+    {% for p in available_players %}
+    <li class="roster-available__cell">
+      <div class="roster-player-row" data-slots="4">
+        <span class="roster-player-row__slot roster-player-row__slot--start" title="Player">{{ roster_player_display_name(p) }}</span>
+        <span class="roster-player-row__slot">{{ tier_display }}</span>
+        <span class="roster-player-row__slot" title="Guild tag">{{ p.home_guild_tag or "—" }}</span>
+        <div class="roster-player-row__slot roster-player-row__slot--actions">
+          {% if can_manage_rosters %}
+            {% if p.id in assignment_by_user_id %}
+            <span class="roster-player-row__meta">Roster {{ assignment_by_user_id[p.id] | upper }}</span>
+            <form class="roster-player-row__form" method="post" action="/rosters/assignment">
+              <input type="hidden" name="action" value="remove" />
+              <input type="hidden" name="view" value="{{ view }}" />
+              <input type="hidden" name="rate" value="{{ rate }}" />
+              <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
+              <input type="hidden" name="user_id" value="{{ p.id }}" />
+              <button type="submit" class="roster-action-btn roster-action-btn--remove">Remove from Roster</button>
+            </form>
+            {% else %}
+            <form class="roster-player-row__form roster-player-row__form--add" method="post" action="/rosters/assignment">
+              <input type="hidden" name="action" value="add" />
+              <input type="hidden" name="view" value="{{ view }}" />
+              <input type="hidden" name="rate" value="{{ rate }}" />
+              <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
+              <input type="hidden" name="user_id" value="{{ p.id }}" />
+              <input type="hidden" name="slot" value="a" class="roster-player-row__slot-input" />
+              <button type="button" class="roster-action-btn roster-action-btn--add js-roster-add-btn">Add to Roster</button>
+            </form>
+            {% endif %}
+          {% else %}
+            <span class="roster-player-row__placeholder">—</span>
+          {% endif %}
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="card__lede small muted roster-available__empty">No players match this list yet (guild tags come from Discord roles on sign-in).</p>
+  {% endif %}
+</section>
+<script>
+  (function () {
+    document.querySelectorAll(".js-roster-add-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var form = btn.closest("form");
+        if (!form) return;
+        var slotInput = form.querySelector('input[name="slot"]');
+        if (!slotInput) return;
+        var answer = window.prompt(
+          "Add to which roster?\n\nEnter A for Roster A, or B for Roster B:",
+          "A"
+        );
+        if (answer === null) return;
+        var c = String(answer).trim().toUpperCase();
+        if (c !== "A" && c !== "B") {
+          window.alert("Please enter A or B.");
+          return;
+        }
+        slotInput.value = c === "B" ? "b" : "a";
+        form.submit();
+      });
+    });
+  })();
+</script>
 {% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Review reimbursement #{{ req.id }} — {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow">Officer review</p>
+    <h1 class="page-head__title">Request #{{ req.id }}</h1>
+    <p class="page-head__meta muted">
+      Submitted by <strong class="text-bright">{% if submitter %}{{ display_name(submitter) }}{% else %}unknown user{% endif %}</strong>
+      {% if req.submitter_guild_tag %}
+      · Guild <strong class="text-bright">{{ req.submitter_guild_tag }}</strong>
+      {% endif %}
+      · {{ req.created_at.strftime("%Y-%m-%d %H:%M UTC") }}
+    </p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost btn--sm" href="/tools/repair-reimbursement#review">Back to queue</a>
+  </div>
+</header>
+
+<section class="card card--lift">
+  <div class="card__head">
+    <h2 class="card__title">Declared materials &amp; totals</h2>
+    <span class="card__badge">Pending</span>
+  </div>
+  <div class="reimb-review__layout">
+    <div>
+      <div class="reimb-fight-box">
+        <h3 class="reimb-fight-box__title">Fight / battle (player)</h3>
+        <p class="reimb-fight-box__text">{% if req.fight_description %}{{ req.fight_description }}{% else %}<span class="muted">No description on file (older request).</span>{% endif %}</p>
+      </div>
+      <div class="reimb-table-wrap">
+        <table class="reimb-rates">
+          <thead>
+            <tr>
+              <th scope="col">Material</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Line payout</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for label, rate, qty, line_total in qty_rows %}
+            <tr>
+              <td>{{ label }} <span class="muted">(@ {{ "{:,}".format(rate) }})</span></td>
+              <td class="reimb-rates__num">{{ qty }}</td>
+              <td class="reimb-rates__num">{{ "{:,}".format(line_total) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="reimb-review__totals">
+        <p class="reimb-review__totals-line">
+          <strong>Material value (reimbursement):</strong>
+          <span class="reimb-rates__num">{{ "{:,}".format(req.material_payout_gold) }}</span> gold
+        </p>
+        <p class="reimb-review__totals-line">
+          <strong>Gold cost (repair bill):</strong>
+          <span class="reimb-rates__num">{{ "{:,}".format(req.gold_repair_cost) }}</span> gold
+        </p>
+        <p class="reimb-review__totals-grand">
+          <strong>Full payout total</strong>
+          <span class="reimb-review__totals-grand-num"
+            >{{ "{:,}".format(req.material_payout_gold + req.gold_repair_cost) }} gold</span
+          >
+        </p>
+        <p class="small muted" style="margin: 0.5rem 0 0">
+          Pay this combined amount in game (material policy + bill gold), then attach proof below.
+        </p>
+      </div>
+    </div>
+    <div class="reimb-review__shot">
+      <h3 class="reimb-review__shot-title">Repair bill screenshot</h3>
+      <a href="/tools/repair-reimbursement/request/{{ req.id }}/bill" target="_blank" rel="noopener">Open full size</a>
+      <div class="reimb-review__img-frame">
+        <img
+          src="/tools/repair-reimbursement/request/{{ req.id }}/bill"
+          alt="Repair bill submitted by player"
+          class="reimb-review__img"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card card--lift card--accent">
+  <div class="card__head">
+    <h2 class="card__title">Mark paid</h2>
+    <span class="card__badge">After in-game payout</span>
+  </div>
+  <p class="card__lede small muted" style="margin-top: 0">
+    Pay the member the <strong>full payout total</strong> above in game, then upload a screenshot of the transaction
+    (trade window, mail, or ledger—whatever shows the gold or items sent).
+  </p>
+  <form
+    method="post"
+    action="/tools/repair-reimbursement/review/{{ req.id }}/mark-paid"
+    enctype="multipart/form-data"
+    class="reimb-mark-paid"
+  >
+    <label class="reimb-field reimb-field--wide">
+      <span class="reimb-field__label">Payout proof screenshot</span>
+      <input
+        class="reimb-field__file"
+        type="file"
+        name="payout_image"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        required
+      />
+    </label>
+    <p><button type="submit" class="btn btn--primary btn--sm">Confirm paid</button></p>
+  </form>
+</section>
+
+<style>
+  .reimb-fight-box {
+    margin: 0 0 1rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-deep);
+  }
+  .reimb-fight-box__title {
+    margin: 0 0 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .reimb-fight-box__text {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .reimb-review__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 22rem);
+    gap: 1.25rem 1.5rem;
+    align-items: start;
+    margin-top: 0.5rem;
+  }
+  @media (max-width: 52rem) {
+    .reimb-review__layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  .reimb-review__totals {
+    margin: 1rem 0 0;
+    line-height: 1.55;
+    font-size: 0.95rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-deep);
+  }
+  .reimb-review__totals-line {
+    margin: 0 0 0.35rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.35rem 1rem;
+  }
+  .reimb-review__totals-grand {
+    margin: 0.75rem 0 0;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border-bold);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.35rem 1rem;
+    font-size: 1.05rem;
+  }
+  .reimb-review__totals-grand-num {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--ochre-soft);
+  }
+  .reimb-review__shot-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+  }
+  .reimb-review__img-frame {
+    margin-top: 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-deep);
+    overflow: hidden;
+    max-height: 28rem;
+  }
+  .reimb-review__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 28rem;
+    object-fit: contain;
+  }
+  .reimb-rates,
+  .reimb-rates th,
+  .reimb-rates td {
+    border-bottom: 1px solid var(--border);
+    padding: 0.45rem 0.55rem;
+  }
+  .reimb-rates {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  .reimb-rates__num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .reimb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .reimb-field--wide {
+    max-width: 28rem;
+  }
+  .reimb-field__label {
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .reimb-field__file {
+    font: inherit;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-deep);
+    color: var(--text);
+  }
+  .reimb-mark-paid {
+    margin-top: 0.5rem;
+  }
+</style>
+{% endblock %}

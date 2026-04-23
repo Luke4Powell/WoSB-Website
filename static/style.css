@@ -523,6 +523,10 @@ code {
   border-color: rgba(196, 92, 62, 0.75);
   background: linear-gradient(135deg, #4a2a24, var(--surface-deep));
 }
+.banner--success {
+  border-color: rgba(77, 163, 122, 0.55);
+  background: linear-gradient(135deg, #24352c, var(--surface-deep));
+}
 .banner__icon {
   flex-shrink: 0;
   width: 1.5rem;
@@ -790,6 +794,49 @@ code {
   font-weight: 500;
 }
 
+/* Tools page — placeholders not built yet */
+.card.tool-card--soon {
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px rgba(120, 112, 104, 0.22),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.card.tool-card--soon.card--lift:hover {
+  transform: none;
+  border-color: var(--border-strong);
+}
+.card.tool-card--soon .tool-soon-vail {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(165deg, rgba(38, 32, 28, 0.45), rgba(16, 12, 10, 0.62));
+  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+.card.tool-card--soon .tool-soon-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  margin: 0;
+  padding: 0.35rem 0.85rem;
+  max-width: calc(100% - 2.5rem);
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.35;
+  color: var(--stucco);
+  background: rgba(12, 10, 8, 0.92);
+  border: 1px solid rgba(244, 234, 215, 0.18);
+  border-radius: 999px;
+  pointer-events: none;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
 /* Access list / pills */
 .access-list {
   list-style: none;
@@ -915,6 +962,28 @@ code {
   color: var(--sea-light);
 }
 
+/* Reimbursement / tools status chips (global so /tools and reimbursement pages match) */
+.reimb-status {
+  display: inline-block;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  text-transform: none;
+}
+.reimb-status--pending {
+  background: rgba(212, 168, 75, 0.22);
+  color: var(--ochre-soft);
+  border: 1px solid rgba(212, 168, 75, 0.45);
+}
+.reimb-status--paid {
+  background: rgba(45, 92, 69, 0.45);
+  color: #c8e6d4;
+  border: 1px solid rgba(77, 163, 122, 0.5);
+}
+
 .empty-state {
   text-align: center;
   padding: 2rem 1rem 1.5rem;
@@ -958,6 +1027,53 @@ code {
 }
 
 /* Rosters: unified board (Alliance / Guild, rates 1–6, A & B) */
+.roster-scope-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1.1rem;
+  padding: 0.85rem 1.1rem 0.95rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--border-bold);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+.roster-scope-banner--alliance {
+  background: linear-gradient(135deg, rgba(47, 111, 126, 0.35) 0%, var(--surface) 55%, var(--surface-deep) 100%);
+  border-color: rgba(74, 154, 170, 0.45);
+}
+.roster-scope-banner--guild {
+  background: linear-gradient(135deg, rgba(196, 92, 62, 0.22) 0%, var(--surface) 55%, var(--surface-deep) 100%);
+  border-color: rgba(212, 168, 75, 0.45);
+}
+.roster-scope-banner__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--stucco);
+  line-height: 1.25;
+}
+.roster-scope-banner__tag {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--ochre-soft), var(--ochre));
+  border: 1px solid rgba(42, 31, 24, 0.2);
+}
+.roster-scope-banner__sub {
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.45;
+  max-width: 44rem;
+}
+
 .roster-categories {
   display: flex;
   flex-wrap: wrap;
@@ -1032,11 +1148,6 @@ code {
   padding: 0.95rem 1.1rem 1.1rem;
 }
 .roster-rate-shell__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
   margin-bottom: 0.85rem;
 }
 .roster-rate-shell__title {
@@ -1044,15 +1155,6 @@ code {
   font-weight: 700;
   font-size: 1.15rem;
   color: var(--stucco);
-}
-.roster-rate-shell__cycle {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-.roster-rate-shell__dead {
-  opacity: 0.45;
-  pointer-events: none;
 }
 
 .roster-rate-pills {
@@ -1112,6 +1214,180 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Roster player rows — equal-width columns, one type scale */
+.roster-player-row {
+  display: grid;
+  width: 100%;
+  align-items: center;
+  column-gap: clamp(0.45rem, 2.5vw, 1.1rem);
+  min-height: 2.35rem;
+}
+.roster-player-row[data-slots="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.roster-player-row[data-slots="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.roster-player-row__slot {
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text);
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.roster-player-row__slot--start {
+  text-align: left;
+}
+.roster-player-row__slot--actions {
+  text-align: right;
+  white-space: normal;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.roster-player-row__meta,
+.roster-player-row__placeholder {
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text);
+}
+.roster-player-row__placeholder {
+  color: var(--muted);
+}
+
+.roster-player-row__form {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+.roster-player-row__form--add {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+button.roster-action-btn {
+  appearance: none;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  line-height: 1.35;
+  padding: 0.26rem 0.55rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+button.roster-action-btn:active {
+  transform: translateY(1px);
+}
+.roster-action-btn--add {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--ochre-soft) 0%, var(--ochre) 45%, #b8892f 100%);
+  border: 1px solid rgba(42, 31, 24, 0.28);
+  box-shadow: 0 4px 14px rgba(212, 168, 75, 0.38);
+}
+.roster-action-btn--add:hover {
+  box-shadow: 0 6px 18px rgba(212, 168, 75, 0.48);
+}
+.roster-action-btn--remove {
+  color: var(--muted);
+  background: rgba(244, 234, 215, 0.05);
+  border: 1px solid rgba(244, 234, 215, 0.14);
+  box-shadow: none;
+}
+.roster-action-btn--remove:hover {
+  color: var(--stucco-dim);
+  background: rgba(244, 234, 215, 0.08);
+  border-color: rgba(244, 234, 215, 0.22);
+}
+
+.roster-lineup {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: rgba(0, 0, 0, 0.12);
+  max-height: min(22rem, 48vh);
+  overflow: auto;
+}
+.roster-lineup__row {
+  list-style: none;
+  margin: 0;
+  padding: 0.42rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+}
+.roster-lineup__row:last-child {
+  border-bottom: none;
+}
+
+.roster-available {
+  margin-top: 0.25rem;
+}
+.roster-available__list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.55rem;
+  max-height: min(28rem, 58vh);
+  overflow: auto;
+  align-content: start;
+}
+@media (max-width: 720px) {
+  .roster-available__list {
+    grid-template-columns: 1fr;
+  }
+}
+.roster-available__cell {
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.14);
+  padding: 0.42rem 0.55rem;
+  font-family: var(--font);
+}
+.roster-available__empty {
+  margin-top: 0.35rem;
 }
 
 /* Spanish Faction hub + guild pages */

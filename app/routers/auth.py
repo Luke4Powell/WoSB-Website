@@ -31,14 +31,15 @@ def _role_id_strings_from_member(member: dict) -> list[str]:
 def apply_guild_member_roles_to_user(user: User, member: dict, settings: Settings) -> None:
     """Update leadership flags and home_guild_tag from a Discord guild member payload (bot API)."""
     role_id_strs = _role_id_strings_from_member(member)
-    is_admiral, is_leader, is_alliance_leader = map_roles_to_flags(settings, role_id_strs)
+    is_admiral, is_leader, is_alliance_leader, is_officer = map_roles_to_flags(settings, role_id_strs)
     inferred_guild_tag = infer_guild_tag_from_roles(settings, role_id_strs)
     user.is_admiral = is_admiral
     user.is_leader = is_leader
     user.is_alliance_leader = is_alliance_leader
+    user.is_officer = is_officer
     if inferred_guild_tag:
         user.home_guild_tag = inferred_guild_tag
-    elif not (is_admiral or is_leader):
+    elif not (is_admiral or is_leader or is_officer):
         user.home_guild_tag = None
 
 

@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% block title %}Repair reimbursement — {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow">TIF &amp; BWC</p>
+    <h1 class="page-head__title">Repair reimbursement</h1>
+    <p class="page-head__meta muted">
+      Submit materials and gold from your repair bill, attach a screenshot for officers to verify.
+    </p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn--ghost btn--sm" href="/tools">All tools</a>
+  </div>
+</header>
+
+{% if request.query_params.get("submitted") %}
+<div class="banner banner--success reimb-flash" role="status" data-reimb-flash>
+  <span class="banner__icon" aria-hidden="true">✓</span>
+  <span class="reimb-flash__msg">Your reimbursement request was submitted and is <strong>pending</strong> review.</span>
+  <button type="button" class="btn btn--ghost btn--sm reimb-flash__dismiss">Dismiss</button>
+</div>
+{% endif %}
+{% if request.query_params.get("marked_paid") %}
+<div class="banner banner--success reimb-flash" role="status" data-reimb-flash>
+  <span class="banner__icon" aria-hidden="true">✓</span>
+  <span class="reimb-flash__msg">Request marked <strong>paid</strong>.</span>
+  <button type="button" class="btn btn--ghost btn--sm reimb-flash__dismiss">Dismiss</button>
+</div>
+{% endif %}
+
+<section class="card card--lift" id="instructions">
+  <div class="card__head">
+    <h2 class="card__title">Instructions &amp; payout rates</h2>
+    <span class="card__badge">Read first</span>
+  </div>
+  <div class="reimb-instructions__split">
+    <div class="reimb-instructions__left">
+      <p class="card__lede small muted reimb-instructions__intro">
+        <strong>TIF</strong> and <strong>BWC</strong> members can apply for reimbursement requests via this tool.
+        Open <strong>Major repair</strong> in game and select
+        <strong>For resources and gold</strong> (see the example screenshot) so both materials and gold appear. Count
+        each material and the gold line from that screen, enter them below, and attach a
+        <strong>full screenshot</strong> of the same view so officers can verify.
+      </p>
+      <p class="reimb-instructions__rates-label small muted">Guild payout per material unit</p>
+      <div class="reimb-table-wrap">
+        <table class="reimb-rates">
+          <thead>
+            <tr>
+              <th scope="col">Material</th>
+              <th scope="col">Reimbursement (gold per unit)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, label, rate in materials %}
+            <tr>
+              <td>{{ label }}</td>
+              <td class="reimb-rates__num">{{ "{:,}".format(rate) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="reimb-instructions__screenshot-note small muted">
+        Use the <strong>For resources and gold</strong> option (not “For resources” alone). Screenshot this
+        <strong>Major repair</strong> bill before you press <strong>Craft</strong>.
+      </p>
+    </div>
+    <figure class="reimb-instructions__figure" aria-label="Example Major repair bill screenshot">
+      <img
+        class="reimb-instructions__img"
+        src="/static/images/repair-reimbursement-bill-example.png"
+        loading="lazy"
+        decoding="async"
+        alt="In-game Major repair window with For resources and gold selected; shows Required materials and gold before Craft."
+      />
+    </figure>
+  </div>
+  <p class="small muted" style="margin-bottom: 0">
+    After payout, officers attach a screenshot of the in-game <strong>trade or mail transaction</strong> proving you
+    were reimbursed. You can open your request again once it is marked paid to see that proof.
+  </p>
+</section>
+
+<section class="card card--lift" id="submit">
+  <div class="card__head">
+    <h2 class="card__title">New request</h2>
+  </div>
+  <form
+    class="reimb-form"
+    method="post"
+    action="/tools/repair-reimbursement/submit"
+    enctype="multipart/form-data"
+  >
+    <div class="reimb-form__grid">
+      {% for key, label, rate in materials %}
+      <label class="reimb-field">
+        <span class="reimb-field__label">{{ label }} <span class="muted">(@ {{ "{:,}".format(rate) }})</span></span>
+        <input class="reimb-field__input" type="number" name="qty_{{ key }}" min="0" max="1000000" value="0" step="1" />
+      </label>
+      {% endfor %}
+      <label class="reimb-field" for="reimb-gold-repair-cost">
+        <span class="reimb-field__label">Gold repair cost <span class="muted">(from bill)</span></span>
+        <input
+          class="reimb-field__input"
+          type="number"
+          name="gold_repair_cost"
+          id="reimb-gold-repair-cost"
+          min="1"
+          required
+          inputmode="numeric"
+          step="1"
+          aria-required="true"
+        />
+      </label>
+      <label class="reimb-field reimb-field--wide" for="reimb-fight-description">
+        <span class="reimb-field__label">Fight / battle <span class="muted">(what are you claiming for?)</span></span>
+        <textarea
+          class="reimb-field__textarea"
+          id="reimb-fight-description"
+          name="fight_description"
+          rows="3"
+          maxlength="2000"
+          minlength="3"
+          required
+          aria-required="true"
+          placeholder="e.g. Port Battle at Aruba. Sank during tension phase."
+        ></textarea>
+      </label>
+      <label class="reimb-field reimb-field--wide" for="reimb-bill-image">
+        <span class="reimb-field__label">Repair bill screenshot <span class="muted">(PNG, JPG, WebP, or GIF · max 5 MB)</span></span>
+        <input
+          class="reimb-field__file"
+          id="reimb-bill-image"
+          type="file"
+          name="bill_image"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          required
+          aria-required="true"
+        />
+      </label>
+    </div>
+    <p class="reimb-form__actions">
+      <button type="submit" class="btn btn--primary btn--sm">Submit request</button>
+    </p>
+  </form>
+</section>
+
+<section class="card card--lift" id="mine">
+  <div class="card__head">
+    <h2 class="card__title">Your requests</h2>
+    <span class="card__badge">History</span>
+  </div>
+  {% if not my_requests %}
+  <p class="card__lede small muted" style="margin-top: 0">No requests yet.</p>
+  {% else %}
+  <div class="reimb-table-wrap">
+    <table class="reimb-requests">
+      <thead>
+        <tr>
+          <th scope="col">When</th>
+          <th scope="col">Guild</th>
+          <th scope="col">Fight / battle</th>
+          <th scope="col">Materials payout</th>
+          <th scope="col">Gold (bill)</th>
+          <th scope="col">Status</th>
+          <th scope="col">Bill</th>
+          <th scope="col">Payout proof</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in my_requests %}
+        <tr>
+          <td class="muted small">{{ r.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
+          <td class="small">{% if r.submitter_guild_tag %}{{ r.submitter_guild_tag }}{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="small reimb-requests__fight">{% if r.fight_description %}{{ r.fight_description[:56] }}{% if r.fight_description|length > 56 %}…{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="reimb-rates__num">{{ "{:,}".format(r.material_payout_gold) }}</td>
+          <td class="reimb-rates__num">{{ "{:,}".format(r.gold_repair_cost) }}</td>
+          <td>
+            {% if r.status == "paid" %}
+            <span class="reimb-status reimb-status--paid">Paid</span>
+            {% else %}
+            <span class="reimb-status reimb-status--pending">Pending</span>
+            {% endif %}
+          </td>
+          <td><a class="btn btn--ghost btn--sm" href="/tools/repair-reimbursement/request/{{ r.id }}/bill" target="_blank" rel="noopener">View</a></td>
+          <td>
+            {% if r.status == "paid" and r.payout_proof_filename %}
+            <a class="btn btn--ghost btn--sm" href="/tools/repair-reimbursement/request/{{ r.id }}/payout-proof" target="_blank" rel="noopener">View</a>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+{% if can_review %}
+<section class="card card--lift card--accent" id="review">
+  <div class="card__head">
+    <h2 class="card__title">Officer review</h2>
+    <span class="card__badge">Admiral / Leader</span>
+  </div>
+  {% if not pending_for_review %}
+  <p class="card__lede small muted" style="margin-top: 0">No pending requests.</p>
+  {% else %}
+  <div class="reimb-table-wrap">
+    <table class="reimb-requests">
+      <thead>
+        <tr>
+          <th scope="col">Member</th>
+          <th scope="col">Guild</th>
+          <th scope="col">Submitted</th>
+          <th scope="col">Fight / battle</th>
+          <th scope="col">Materials (gold)</th>
+          <th scope="col">Bill gold</th>
+          <th scope="col">Full total</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in pending_for_review %}
+        {% set sub = submitters_by_id.get(r.user_id) %}
+        <tr>
+          <td>{% if sub %}{{ display_name(sub) }}{% else %}User #{{ r.user_id }}{% endif %}</td>
+          <td class="small">{% if r.submitter_guild_tag %}<strong>{{ r.submitter_guild_tag }}</strong>{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="muted small">{{ r.created_at.strftime("%Y-%m-%d %H:%M UTC") }}</td>
+          <td class="small reimb-requests__fight">{% if r.fight_description %}{{ r.fight_description[:40] }}{% if r.fight_description|length > 40 %}…{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="reimb-rates__num">{{ "{:,}".format(r.material_payout_gold) }}</td>
+          <td class="reimb-rates__num">{{ "{:,}".format(r.gold_repair_cost) }}</td>
+          <td class="reimb-rates__num reimb-requests__total">{{ "{:,}".format(r.material_payout_gold + r.gold_repair_cost) }}</td>
+          <td><a class="btn btn--primary btn--sm" href="/tools/repair-reimbursement/review/{{ r.id }}">Review</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+<style>
+  .reimb-instructions__split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 1.25rem 1.75rem;
+    align-items: start;
+    margin-top: 0.85rem;
+  }
+  @media (max-width: 52rem) {
+    .reimb-instructions__split {
+      grid-template-columns: 1fr;
+    }
+  }
+  .reimb-instructions__left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+  .reimb-instructions__intro {
+    margin: 0;
+    line-height: 1.58;
+  }
+  .reimb-instructions__screenshot-note {
+    margin: 0.35rem 0 0;
+    line-height: 1.5;
+    font-size: 0.88rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border);
+  }
+  .reimb-instructions__figure {
+    margin: 0;
+    min-width: 0;
+    justify-self: stretch;
+  }
+  @media (min-width: 52.01rem) {
+    .reimb-instructions__figure {
+      justify-self: end;
+    }
+    .reimb-instructions__img {
+      max-width: 28rem;
+      margin-left: auto;
+    }
+  }
+  .reimb-instructions__img {
+    display: block;
+    width: 100%;
+    max-width: 28rem;
+    height: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  }
+  .reimb-instructions__rates-label {
+    margin: 0.15rem 0 0;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--stucco-dim);
+  }
+  .reimb-table-wrap {
+    overflow-x: auto;
+    margin: 0.75rem 0 0;
+  }
+  .reimb-instructions__left .reimb-table-wrap {
+    margin: 0.25rem 0 0;
+  }
+  .reimb-rates,
+  .reimb-requests {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  .reimb-rates th,
+  .reimb-rates td,
+  .reimb-requests th,
+  .reimb-requests td {
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .reimb-rates__num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .reimb-form__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: 0.75rem 1rem;
+    margin-top: 0.5rem;
+  }
+  .reimb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  .reimb-field--wide {
+    grid-column: 1 / -1;
+  }
+  .reimb-field__label {
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .reimb-form--attempted .reimb-field__input:invalid,
+  .reimb-form--attempted .reimb-field__textarea:invalid,
+  .reimb-form--attempted .reimb-field__file:invalid {
+    border-color: rgba(224, 122, 95, 0.95);
+    box-shadow: 0 0 0 2px rgba(196, 92, 62, 0.28);
+  }
+  .reimb-field__input,
+  .reimb-field__file,
+  .reimb-field__textarea {
+    font: inherit;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-deep);
+    color: var(--text);
+  }
+  .reimb-field__textarea {
+    min-height: 4.5rem;
+    resize: vertical;
+    width: 100%;
+    line-height: 1.45;
+  }
+  .reimb-form__actions {
+    margin: 1rem 0 0;
+  }
+  .reimb-flash {
+    align-items: center;
+  }
+  .reimb-flash__msg {
+    flex: 1;
+    min-width: 0;
+  }
+  .reimb-flash__dismiss {
+    flex-shrink: 0;
+  }
+  .reimb-requests__fight {
+    max-width: 14rem;
+    line-height: 1.35;
+    vertical-align: top;
+  }
+  .reimb-requests__total {
+    font-weight: 700;
+    color: var(--ochre-soft);
+  }
+</style>
+<script>
+  (function () {
+    {% if submit_error_message %}
+    var _se = {{ submit_error_message | tojson }};
+    if (typeof _se === "string" && _se) window.alert(_se);
+    {% endif %}
+
+    document.querySelectorAll("[data-reimb-flash]").forEach(function (el) {
+      var btn = el.querySelector(".reimb-flash__dismiss");
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        el.remove();
+        var u = new URL(location.href);
+        u.searchParams.delete("marked_paid");
+        u.searchParams.delete("submitted");
+        var tail = u.search ? u.search + u.hash : u.hash || "";
+        history.replaceState({}, "", u.pathname + tail);
+      });
+    });
+
+    var reimbForm = document.querySelector("form.reimb-form");
+    if (reimbForm) {
+      reimbForm.addEventListener(
+        "invalid",
+        function () {
+          reimbForm.classList.add("reimb-form--attempted");
+        },
+        true
+      );
+    }
+  })();
+</script>
+{% endblock %}

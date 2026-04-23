@@ -11,6 +11,7 @@ from app.routers.auth import router as auth_router
 from app.routers.pages import router as pages_router
 from app.routers.port_battle_api import router as port_battle_api_router
 from app.routers.profile_api import router as profile_api_router
+from app.routers.repair_reimbursement import router as repair_reimbursement_router
 
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     application.include_router(pages_router)
     application.include_router(port_battle_api_router)
     application.include_router(profile_api_router)
+    application.include_router(repair_reimbursement_router)
 
     return application
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 from urllib.parse import urlencode
 
@@ -100,3 +101,32 @@ def user_can_open_guild_board(user: User, guild_slug: str) -> bool:
         return True
     home_slug = home_tag_to_guild_slug(user.home_guild_tag)
     return home_slug is not None and home_slug == (guild_slug or "").strip().lower()
+
+
+def roster_player_display_name(user: User) -> str:
+    return (user.global_name or user.username or "").strip() or str(user.discord_id)
+
+
+def roster_pool_eligible_user(user: User, *, view: str, guild_slug: str | None) -> bool:
+    """True if this user may appear on the available list for this roster scope."""
+    slug = home_tag_to_guild_slug(user.home_guild_tag)
+    if not slug:
+        return False
+    if view == "guild" and guild_slug:
+        return slug == (guild_slug or "").strip().lower()
+    return view == "alliance"
+
+
+def filter_roster_available_players(
+    users: Iterable[User],
+    *,
+    view: str,
+    guild_slug: str | None,
+) -> list[User]:
+    """Players with a known roster guild tag; guild view limits to that slug."""
+    pool = [u for u in users if roster_pool_eligible_user(u, view=view, guild_slug=guild_slug)]
+
+    def _key(u: User) -> tuple[str, int]:
+        return (roster_player_display_name(u).lower(), u.discord_id)
+
+    return sorted(pool, key=_key)

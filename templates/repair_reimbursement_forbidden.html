@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Repair reimbursement — {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-head page-head--compact">
+  <div>
+    <p class="eyebrow">Guild ops</p>
+    <h1 class="page-head__title">Repair reimbursement</h1>
+    <p class="page-head__meta muted">This tool is for <strong>TIF</strong> and <strong>BWC</strong> roster members, plus alliance officers.</p>
+  </div>
+</header>
+
+<div class="banner banner--error" role="alert">
+  <span class="banner__icon" aria-hidden="true">!</span>
+  <span
+    >Your account is not flagged as <strong>TIF</strong> or <strong>BWC</strong> in this app, and you are not an Admiral
+    or Leader. If you believe this is wrong, ask an officer to confirm your Discord <strong>TIF or BWC guild role</strong>
+    is set, then sign out and sign in again.</span
+  >
+</div>
+
+<p class="muted"><a class="btn btn--ghost btn--sm" href="/tools">Back to tools</a></p>
+{% endblock %}

@@ -10,6 +10,37 @@
 </header>
 
 <div class="grid grid--2">
+  <article class="card card--lift">
+    <div class="card__head">
+      <h2 class="card__title">Repair Reimbursement Request</h2>
+      <span class="card__badge">Live</span>
+    </div>
+    <p class="card__lede">TIF &amp; BWC: submit repair costs after battles or PBs; officers see your guild on each request.</p>
+    <p><a class="btn btn--primary btn--sm" href="/tools/repair-reimbursement">Open reimbursement tool</a></p>
+    <div class="tool-preview">
+      <div class="tool-preview__row">
+        <span class="tool-preview__k">Total pending requests</span>
+        <span class="tool-preview__v accent">{{ reimburse_total_pending }}</span>
+      </div>
+      <div class="tool-preview__row">
+        <span class="tool-preview__k">Your pending requests</span>
+        <span class="tool-preview__v">{{ reimburse_my_pending }}</span>
+      </div>
+      <div class="tool-preview__row">
+        <span class="tool-preview__k">Most recent request</span>
+        <span class="tool-preview__v">
+          {% if reimburse_latest_kind == "paid" %}
+          <span class="reimb-status reimb-status--paid">Paid</span>
+          {% elif reimburse_latest_kind == "pending" %}
+          <span class="reimb-status reimb-status--pending">Pending</span>
+          {% else %}
+          <span class="muted">No requests yet</span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </article>
+
   <article class="card card--lift card--accent">
     <div class="card__head">
       <h2 class="card__title">Port battle schedule</h2>
@@ -24,10 +55,10 @@
     </div>
   </article>
 
-  <article class="card card--lift">
+  <article class="card card--lift tool-card--soon">
     <div class="card__head">
       <h2 class="card__title">Ship builder</h2>
-      <span class="card__badge">Soon</span>
+      <span class="card__badge card__badge--muted">Soon</span>
     </div>
     <p class="card__lede">Wood, labor, and outfitting costs with live material prices and blueprint slots.</p>
     <p><button type="button" class="btn btn--ghost btn--sm" disabled aria-disabled="true">Coming soon</button></p>
@@ -36,12 +67,14 @@
       <div class="tool-preview__row"><span class="tool-preview__k">Guns / mods</span><span class="tool-preview__v">—</span></div>
       <div class="tool-preview__row"><span class="tool-preview__k">Est. cost</span><span class="tool-preview__v muted">TBD</span></div>
     </div>
+    <div class="tool-soon-vail" aria-hidden="true"></div>
+    <p class="tool-soon-label" role="status">Coming soon · in development</p>
   </article>
 
-  <article class="card card--lift">
+  <article class="card card--lift tool-card--soon">
     <div class="card__head">
       <h2 class="card__title">Trade route planner</h2>
-      <span class="card__badge">Soon</span>
+      <span class="card__badge card__badge--muted">Soon</span>
     </div>
     <p class="card__lede">Ports, goods, risk windows, and profit per trip—save routes for your officers.</p>
     <p><button type="button" class="btn btn--ghost btn--sm" disabled aria-disabled="true">Coming soon</button></p>
@@ -50,12 +83,14 @@
       <div class="tool-preview__row"><span class="tool-preview__k">Cargo</span><span class="tool-preview__v">—</span></div>
       <div class="tool-preview__row"><span class="tool-preview__k">Margin</span><span class="tool-preview__v muted">TBD</span></div>
     </div>
+    <div class="tool-soon-vail" aria-hidden="true"></div>
+    <p class="tool-soon-label" role="status">Coming soon · in development</p>
   </article>
 
-  <article class="card card--lift">
+  <article class="card card--lift tool-card--soon">
     <div class="card__head">
       <h2 class="card__title">Battle stats</h2>
-      <span class="card__badge">Soon</span>
+      <span class="card__badge card__badge--muted">Soon</span>
     </div>
     <p class="card__lede">Structured battle logs, screenshots, and rollups for PBs and open-world fights.</p>
     <p><button type="button" class="btn btn--ghost btn--sm" disabled aria-disabled="true">Coming soon</button></p>
@@ -64,12 +99,14 @@
       <div class="tool-preview__row"><span class="tool-preview__k">Damage / sinks</span><span class="tool-preview__v">—</span></div>
       <div class="tool-preview__row"><span class="tool-preview__k">Export</span><span class="tool-preview__v muted">TBD</span></div>
     </div>
+    <div class="tool-soon-vail" aria-hidden="true"></div>
+    <p class="tool-soon-label" role="status">Coming soon · in development</p>
   </article>
 
-  <article class="card card--lift">
+  <article class="card card--lift tool-card--soon">
     <div class="card__head">
       <h2 class="card__title">Fleet roster</h2>
-      <span class="card__badge">Soon</span>
+      <span class="card__badge card__badge--muted">Soon</span>
     </div>
     <p class="card__lede">Who is sailing what—tags for PB night, screening, and econ runs.</p>
     <p><button type="button" class="btn btn--ghost btn--sm" disabled aria-disabled="true">Coming soon</button></p>
@@ -78,34 +115,8 @@
       <div class="tool-preview__row"><span class="tool-preview__k">Roles</span><span class="tool-preview__v">—</span></div>
       <div class="tool-preview__row"><span class="tool-preview__k">Availability</span><span class="tool-preview__v muted">TBD</span></div>
     </div>
-  </article>
-
-  <article class="card card--lift">
-    <div class="card__head">
-      <h2 class="card__title">Economy dashboard</h2>
-      <span class="card__badge">Soon</span>
-    </div>
-    <p class="card__lede">Warehouse stock, contract goals, and alliance-wide production snapshots.</p>
-    <p><button type="button" class="btn btn--ghost btn--sm" disabled aria-disabled="true">Coming soon</button></p>
-    <div class="tool-preview" aria-hidden="true">
-      <div class="tool-preview__row"><span class="tool-preview__k">Goods</span><span class="tool-preview__v">—</span></div>
-      <div class="tool-preview__row"><span class="tool-preview__k">Targets</span><span class="tool-preview__v">—</span></div>
-      <div class="tool-preview__row"><span class="tool-preview__k">Trend</span><span class="tool-preview__v muted">TBD</span></div>
-    </div>
-  </article>
-
-  <article class="card card--lift">
-    <div class="card__head">
-      <h2 class="card__title">Repair Reimbursement Request</h2>
-      <span class="card__badge">Soon</span>
-    </div>
-    <p class="card__lede">Submit repair costs after battles or PBs for officer review and payout tracking.</p>
-    <p><button type="button" class="btn btn--ghost btn--sm" disabled aria-disabled="true">Coming soon</button></p>
-    <div class="tool-preview" aria-hidden="true">
-      <div class="tool-preview__row"><span class="tool-preview__k">Ship / battle</span><span class="tool-preview__v">—</span></div>
-      <div class="tool-preview__row"><span class="tool-preview__k">Materials / cost</span><span class="tool-preview__v">—</span></div>
-      <div class="tool-preview__row"><span class="tool-preview__k">Status</span><span class="tool-preview__v muted">TBD</span></div>
-    </div>
+    <div class="tool-soon-vail" aria-hidden="true"></div>
+    <p class="tool-soon-label" role="status">Coming soon · in development</p>
   </article>
 </div>
 {% endblock %}

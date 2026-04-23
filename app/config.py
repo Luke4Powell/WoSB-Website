@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     discord_role_admiral_id: str = ""
     discord_role_leader_id: str = ""
     discord_role_alliance_leader_id: str = ""
+    discord_role_officer_id: str = ""
 
     # Optional: assign members to a guild roster tab from these Discord roles (right-click role → Copy ID).
     discord_role_guild_tif_id: str = ""
