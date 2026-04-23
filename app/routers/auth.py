@@ -39,7 +39,7 @@ def apply_guild_member_roles_to_user(user: User, member: dict, settings: Setting
     user.is_officer = is_officer
     if inferred_guild_tag:
         user.home_guild_tag = inferred_guild_tag
-    elif not (is_admiral or is_leader or is_officer):
+    elif not (is_admiral or is_leader or is_alliance_leader or is_officer):
         user.home_guild_tag = None
 
 
