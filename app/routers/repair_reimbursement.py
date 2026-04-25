@@ -15,6 +15,7 @@ from app.models import RepairReimbursementRequest, User
 from app.reimbursement.access import can_review_reimbursement_requests, can_submit_reimbursement
 from app.reimbursement.material_rates import RATE_BY_KEY, REIMBURSEMENT_MATERIALS
 from app.reimbursement.storage import reimbursement_upload_dir, save_reimbursement_image
+from app.web_static import static_asset_version
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -34,6 +35,7 @@ def _template_ctx(settings, **extra) -> dict:
     out = {
         "app_name": settings.app_name,
         "site_background_image": settings.site_background_image or None,
+        "static_asset_v": static_asset_version(),
     }
     out.update(extra)
     user = out.get("user")

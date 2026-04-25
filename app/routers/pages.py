@@ -20,20 +20,19 @@ from app.upgrades_catalog import (
 )
 from app.consumables_catalog import load_consumables_catalog
 from app.models import RepairReimbursementRequest, RosterAssignment, User
+from app.port_battle.logic import PortBattleProgramMissing, get_port_names
 from app.roster_data import (
     ALLIANCE_PAGE,
     GUILD_PAGES,
-    RATES,
     default_roster_board_path,
-    filter_roster_available_players,
     get_roster_page,
     guild_choices_for_roster,
     roster_board_url,
-    roster_player_display_name,
     roster_pool_eligible_user,
     user_can_open_guild_board,
 )
 from app.services.discord_api import fetch_members_with_role
+from app.web_static import static_asset_version
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -47,51 +46,11 @@ def _roster_assignment_redirect_url(roster_view: str, rate: int, guild_slug: str
     return roster_board_url("alliance", rate)
 
 
-async def _load_roster_slot_players(
-    db: AsyncSession,
-    *,
-    roster_view: str,
-    guild_slug: str | None,
-    rate: int,
-) -> tuple[list[User], list[User], dict[int, str]]:
-    gstore = (guild_slug or "").strip().lower() if roster_view == "guild" else ""
-    res = await db.execute(
-        select(RosterAssignment)
-        .where(RosterAssignment.scope == roster_view)
-        .where(RosterAssignment.guild_slug == gstore)
-        .where(RosterAssignment.rate == rate)
-    )
-    assigns = list(res.scalars().all())
-    if not assigns:
-        return [], [], {}
-    by_slot: dict[str, list[int]] = {"a": [], "b": []}
-    uid_to_slot: dict[int, str] = {}
-    for a in assigns:
-        if a.slot in ("a", "b"):
-            by_slot.setdefault(a.slot, []).append(a.user_id)
-        uid_to_slot[a.user_id] = a.slot
-    uids = list({a.user_id for a in assigns})
-    ures = await db.execute(select(User).where(User.id.in_(uids)))
-    users_map = {u.id: u for u in ures.scalars().all()}
-
-    def sort_ids(ids: list[int]) -> list[int]:
-        return sorted(
-            ids,
-            key=lambda uid: (
-                roster_player_display_name(users_map[uid]).lower(),
-                users_map[uid].discord_id,
-            ),
-        )
-
-    a_players = [users_map[uid] for uid in sort_ids(by_slot.get("a", [])) if uid in users_map]
-    b_players = [users_map[uid] for uid in sort_ids(by_slot.get("b", [])) if uid in users_map]
-    return a_players, b_players, uid_to_slot
-
-
 def _template_ctx(settings, **extra) -> dict:
     out = {
         "app_name": settings.app_name,
         "site_background_image": settings.site_background_image or None,
+        "static_asset_v": static_asset_version(),
     }
     out.update(extra)
     user = out.get("user")
@@ -280,7 +239,6 @@ async def guild_landing_page(
 async def rosters_board(
     request: Request,
     user: Annotated[User | None, Depends(get_optional_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
     view: str | None = Query(None),
     guild: str | None = Query(None),
     rate: int = Query(1, ge=1, le=6),
@@ -314,22 +272,13 @@ async def rosters_board(
     else:
         current_guild = None
 
-    roster_users_result = await db.execute(
-        select(User).where(User.home_guild_tag.isnot(None)).where(User.home_guild_tag != "")
-    )
-    roster_users = roster_users_result.scalars().all()
-    available_players = filter_roster_available_players(
-        roster_users, view=v, guild_slug=current_guild
-    )
-
-    roster_a_players, roster_b_players, assignment_by_user_id = await _load_roster_slot_players(
-        db,
-        roster_view=v,
-        guild_slug=current_guild,
-        rate=rate,
-    )
+    try:
+        port_names = get_port_names()
+    except PortBattleProgramMissing:
+        port_names = []
 
     settings = get_settings()
+    ships_mix_options = load_catalog().get("ships", [])
     return templates.TemplateResponse(
         request,
         "rosters.html",
@@ -341,15 +290,11 @@ async def rosters_board(
             current_guild=current_guild,
             current_guild_name=current_guild_name,
             guild_choices=choices,
-            rates=RATES,
             roster_board_url=roster_board_url,
-            available_players=available_players,
-            roster_player_display_name=roster_player_display_name,
-            roster_a_players=roster_a_players,
-            roster_b_players=roster_b_players,
-            assignment_by_user_id=assignment_by_user_id,
             can_manage_rosters=user.can_manage_roster_assignments(),
-            tier_display="Tier #",
+            port_names=port_names,
+            ships_mix_options=ships_mix_options,
+            primary_guild_choices=GUILD_PAGES,
         ),
     )
 

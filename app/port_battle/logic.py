@@ -39,6 +39,18 @@ def get_port_names() -> list[str]:
     return sorted(set(names), key=str.casefold)
 
 
+def lookup_port(name: str) -> dict[str, Any] | None:
+    """Return one port row from the calculator DB (name, rate_text, rate_num, pvp_size), or None."""
+    key = (name or "").strip().casefold()
+    if not key:
+        return None
+    mod = _load_calculator_module()
+    for p in mod.get_port_database():
+        if str(p.get("name", "")).strip().casefold() == key:
+            return dict(p)
+    return None
+
+
 def get_default_settings_json() -> dict[str, Any]:
     """Return saved GUI settings if present, else a sensible starter object."""
     if _SETTINGS_PATH.is_file():

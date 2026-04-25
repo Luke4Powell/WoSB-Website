@@ -1,20 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Rosters — {{ app_name }}{% endblock %}
+{% block title %}Port Battle Roster — {{ app_name }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/rosters-board.css?v={{ static_asset_v|default('1') }}" />
+{% endblock %}
 {% block content %}
-<header class="page-head page-head--compact">
-  <div>
-    <p class="eyebrow">Roster board</p>
-    <h1 class="page-head__title">Rosters</h1>
-    <p class="page-head__meta muted">
-      Pick a rate (1–6), then open <strong>Roster A</strong> or <strong>Roster B</strong>. Switch scope with Alliance / Guild
-      below.
-    </p>
-  </div>
-  <div class="page-head__actions">
+<section class="card card--lift pb-intro" aria-labelledby="pb-intro-title">
+  <p class="eyebrow">Roster board</p>
+  <h1 class="pb-intro__title" id="pb-intro-title">Port Battle Roster</h1>
+  <label class="pb-field__k" for="pb-intro-notes">Notes</label>
+  <textarea id="pb-intro-notes" class="pb-intro__notes" rows="3" placeholder="Add event notes here..."></textarea>
+  <div class="pb-intro__actions">
     <a class="btn btn--ghost btn--sm" href="/dashboard">Dashboard</a>
-    <a class="btn btn--primary btn--sm" href="/tools">Tools</a>
+    <a class="btn btn--primary btn--sm" href="/profile">My ships</a>
   </div>
-</header>
+</section>
 
 <div
   class="roster-scope-banner {% if view == 'alliance' %}roster-scope-banner--alliance{% else %}roster-scope-banner--guild{% endif %}"
@@ -22,28 +21,20 @@
   aria-label="Current roster scope"
 >
   {% if view == "alliance" %}
-  <span class="roster-scope-banner__title"><strong>Alliance</strong> roster</span>
-  <span class="roster-scope-banner__sub muted">Alliance-wide line-ups for each port battle rate.</span>
+  <span class="roster-scope-banner__title"><strong>Alliance</strong></span>
+  <span class="roster-scope-banner__sub muted">All alliance members.</span>
   {% else %}
   <span class="roster-scope-banner__title"><strong>{{ current_guild_name }}</strong> <span class="roster-scope-banner__tag">Guild</span></span>
-  <span class="roster-scope-banner__sub muted">Guild roster for this faction — same rates as the alliance board.</span>
+  <span class="roster-scope-banner__sub muted">Guild-only roster scope.</span>
   {% endif %}
 </div>
 
 <nav class="roster-categories" aria-label="Roster scope">
-  <a
-    class="roster-cat{% if view == 'alliance' %} roster-cat--active{% endif %}"
-    href="{{ roster_board_url('alliance', rate) }}"
-    >Alliance</a
-  >
+  <a class="roster-cat{% if view == 'alliance' %} roster-cat--active{% endif %}" href="{{ roster_board_url('alliance', rate) }}">Alliance</a>
   {% if guild_choices %}
-  <a
-    class="roster-cat{% if view == 'guild' %} roster-cat--active{% endif %}"
-    href="{{ roster_board_url('guild', rate, current_guild or guild_choices[0].slug) }}"
-    >Guild</a
-  >
+  <a class="roster-cat{% if view == 'guild' %} roster-cat--active{% endif %}" href="{{ roster_board_url('guild', rate, current_guild or guild_choices[0].slug) }}">Guild</a>
   {% else %}
-  <span class="roster-cat roster-cat--disabled" title="Guild roster not available for your account">Guild</span>
+  <span class="roster-cat roster-cat--disabled">Guild</span>
   {% endif %}
 </nav>
 
@@ -53,7 +44,7 @@
   <input type="hidden" name="rate" value="{{ rate }}" />
   <label class="roster-guild-bar__label">
     <span class="roster-guild-bar__k">Guild</span>
-    <select class="roster-guild-bar__select" name="guild" aria-label="Guild roster" onchange="this.form.submit()">
+    <select class="roster-guild-bar__select" name="guild" onchange="this.form.submit()">
       {% for g in guild_choices %}
       <option value="{{ g.slug }}" {% if g.slug == current_guild %}selected{% endif %}>{{ g.tag }} — {{ g.name }}</option>
       {% endfor %}
@@ -62,175 +53,548 @@
 </form>
 {% endif %}
 
-<nav class="roster-rate-shell card card--lift" aria-label="Port battle rate">
-  <div class="roster-rate-shell__head">
-    <span class="roster-rate-shell__title">Rate {{ rate }} of 6</span>
-  </div>
-  <div class="roster-rate-pills" role="tablist" aria-label="Jump to rate">
-    {% for r in rates %}
-    <a
-      role="tab"
-      aria-selected="{% if r == rate %}true{% else %}false{% endif %}"
-      class="roster-rate-pill{% if r == rate %} roster-rate-pill--active{% endif %}"
-      href="{{ roster_board_url(view, r, current_guild) }}"
-      >Rate {{ r }}</a
-    >
-    {% endfor %}
-  </div>
-</nav>
+<div class="pb-app card card--lift" id="pb-app" data-view="{{ view }}" data-guild="{{ current_guild or '' }}" data-can-manage="{{ '1' if can_manage_rosters else '0' }}">
+  <div class="pb-two-up">
+    <section class="card card--lift pb-panel">
+      <div class="pb-panel__head">
+        <h2 class="card__title">Available Battle Rosters</h2>
+        <button type="button" class="btn btn--ghost btn--sm" id="pb-refresh-list">Refresh</button>
+      </div>
+      <p class="small muted" id="pb-list-msg"></p>
+      <ul class="pb-session-list" id="pb-session-list"></ul>
+      {% if can_manage_rosters %}
+      <div class="pb-actions-row pb-actions-row--compact">
+        <input type="text" id="pb-create-port" class="pb-text-input" list="pb-port-datalist" placeholder="Port (e.g. Aruba)" />
+        <datalist id="pb-port-datalist"></datalist>
+        <select id="pb-create-primary" class="roster-guild-bar__select">
+          {% for g in primary_guild_choices %}
+          <option value="{{ g.slug }}">{{ g.tag }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn--primary btn--sm" id="pb-create-submit">Add Battle</button>
+      </div>
+      <p class="small muted pb-hidden" id="pb-create-err"></p>
+      {% endif %}
+    </section>
 
-<div class="roster-ab-grid">
-  <article class="card card--lift">
-    <div class="card__head">
-      <h2 class="card__title">Roster A</h2>
-      <span class="card__badge card__badge--muted">Rate {{ rate }}</span>
-    </div>
-    <p class="card__lede small muted">
-      {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — line-up for this rate.
-    </p>
-    {% if roster_a_players %}
-    <ul class="roster-lineup">
-      {% for p in roster_a_players %}
-      <li class="roster-lineup__row roster-player-row" data-slots="3">
-        <span class="roster-player-row__slot">{{ tier_display }}</span>
-        <span class="roster-player-row__slot roster-player-row__slot--start">{{ roster_player_display_name(p) }}</span>
-        <div class="roster-player-row__slot roster-player-row__slot--actions">
-          {% if can_manage_rosters %}
-          <form class="roster-player-row__form" method="post" action="/rosters/assignment">
-            <input type="hidden" name="action" value="remove" />
-            <input type="hidden" name="view" value="{{ view }}" />
-            <input type="hidden" name="rate" value="{{ rate }}" />
-            <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
-            <input type="hidden" name="user_id" value="{{ p.id }}" />
-            <button type="submit" class="roster-action-btn roster-action-btn--remove">Remove from Roster</button>
-          </form>
-          {% else %}
-          <span class="roster-player-row__placeholder">—</span>
-          {% endif %}
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <div class="roster-slot roster-slot--empty"><span class="muted">—</span></div>
-    {% endif %}
-  </article>
-  <article class="card card--lift">
-    <div class="card__head">
-      <h2 class="card__title">Roster B</h2>
-      <span class="card__badge card__badge--muted">Rate {{ rate }}</span>
-    </div>
-    <p class="card__lede small muted">
-      {% if view == "alliance" %}Alliance{% else %}{{ current_guild_name }}{% endif %} — second line for the same rate.
-    </p>
-    {% if roster_b_players %}
-    <ul class="roster-lineup">
-      {% for p in roster_b_players %}
-      <li class="roster-lineup__row roster-player-row" data-slots="3">
-        <span class="roster-player-row__slot">{{ tier_display }}</span>
-        <span class="roster-player-row__slot roster-player-row__slot--start">{{ roster_player_display_name(p) }}</span>
-        <div class="roster-player-row__slot roster-player-row__slot--actions">
-          {% if can_manage_rosters %}
-          <form class="roster-player-row__form" method="post" action="/rosters/assignment">
-            <input type="hidden" name="action" value="remove" />
-            <input type="hidden" name="view" value="{{ view }}" />
-            <input type="hidden" name="rate" value="{{ rate }}" />
-            <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
-            <input type="hidden" name="user_id" value="{{ p.id }}" />
-            <button type="submit" class="roster-action-btn roster-action-btn--remove">Remove from Roster</button>
-          </form>
-          {% else %}
-          <span class="roster-player-row__placeholder">—</span>
-          {% endif %}
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <div class="roster-slot roster-slot--empty"><span class="muted">—</span></div>
-    {% endif %}
-  </article>
+    <section class="card card--lift pb-panel">
+      <h2 class="card__title">Status</h2>
+      <div class="pb-status-box">
+        <div class="pb-status-line">Defending Guild: <strong id="pb-status-defending">—</strong></div>
+        <div class="pb-status-line"><strong id="pb-status-primary">0/0</strong> Primary</div>
+        <div class="pb-status-line"><strong id="pb-status-allies">0/0</strong> Allies</div>
+        <div class="pb-status-line"><strong id="pb-status-players">0/0</strong> Players</div>
+      </div>
+      {% if can_manage_rosters %}
+      <div class="pb-actions-row">
+        <button type="button" class="btn btn--ghost btn--sm pb-hidden" id="pb-end-battle">End Battle</button>
+      </div>
+      {% endif %}
+      <p class="small muted" id="pb-detail-meta">Select a battle to see details.</p>
+    </section>
+  </div>
+
+  <div class="pb-two-up pb-two-up--tall">
+    <section class="card card--lift pb-panel">
+      <div class="pb-panel__head">
+        <h2 class="card__title">Player List</h2>
+        <label class="pb-sort-wrap">
+          <span class="small muted">Sort</span>
+          <select id="pb-sort-guild" class="roster-guild-bar__select pb-sort-select">
+            <option value="guild_asc">Guild A-Z</option>
+            <option value="guild_desc">Guild Z-A</option>
+          </select>
+        </label>
+        {% if can_manage_rosters %}
+        <button type="button" class="btn btn--ghost btn--sm pb-hidden" id="pb-move-selected">Move Selected</button>
+        {% endif %}
+      </div>
+      <p class="small muted" id="pb-voice-debug">Voice debug: waiting for battle selection...</p>
+      <div class="pb-list-head{% if can_manage_rosters %} pb-manage-grid{% endif %}">
+        {% if can_manage_rosters %}<span>Select</span>{% endif %}
+        <span>Player Name</span><span>Guild</span><span>Ship</span><span>Ready</span>
+      </div>
+      <div id="pb-player-list" class="pb-player-list"></div>
+    </section>
+
+    <section class="card card--lift pb-panel pb-roster-dropzone" id="pb-roster-panel">
+      <h2 class="card__title">Battle Roster</h2>
+      <div class="pb-list-head{% if can_manage_rosters %} pb-manage-grid{% endif %}">
+        {% if can_manage_rosters %}<span></span>{% endif %}
+        <span>Player Name</span><span>Guild</span><span>Ship</span><span>Ready</span>
+      </div>
+      <div id="pb-roster-list" class="pb-player-list"></div>
+    </section>
+  </div>
+
 </div>
 
-<section class="card card--lift roster-available" id="available-players" aria-labelledby="available-players-heading">
-  <div class="card__head">
-    <h2 class="card__title" id="available-players-heading">Available players</h2>
-    <span class="card__badge card__badge--muted">{{ available_players | length }}</span>
-  </div>
-  {% if view == "alliance" %}
-  <p class="card__lede small muted" style="margin-top: 0">
-    Everyone with a guild tag in TIF, BWC, SVA, or LP — use this pool when filling alliance rosters.
-  </p>
-  {% else %}
-  <p class="card__lede small muted" style="margin-top: 0">
-    Members assigned to <strong>{{ current_guild_name }}</strong> on this site (same guild tag as this roster).
-  </p>
-  {% endif %}
-  {% if available_players %}
-  <ul class="roster-available__list">
-    {% for p in available_players %}
-    <li class="roster-available__cell">
-      <div class="roster-player-row" data-slots="4">
-        <span class="roster-player-row__slot roster-player-row__slot--start" title="Player">{{ roster_player_display_name(p) }}</span>
-        <span class="roster-player-row__slot">{{ tier_display }}</span>
-        <span class="roster-player-row__slot" title="Guild tag">{{ p.home_guild_tag or "—" }}</span>
-        <div class="roster-player-row__slot roster-player-row__slot--actions">
-          {% if can_manage_rosters %}
-            {% if p.id in assignment_by_user_id %}
-            <span class="roster-player-row__meta">Roster {{ assignment_by_user_id[p.id] | upper }}</span>
-            <form class="roster-player-row__form" method="post" action="/rosters/assignment">
-              <input type="hidden" name="action" value="remove" />
-              <input type="hidden" name="view" value="{{ view }}" />
-              <input type="hidden" name="rate" value="{{ rate }}" />
-              <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
-              <input type="hidden" name="user_id" value="{{ p.id }}" />
-              <button type="submit" class="roster-action-btn roster-action-btn--remove">Remove from Roster</button>
-            </form>
-            {% else %}
-            <form class="roster-player-row__form roster-player-row__form--add" method="post" action="/rosters/assignment">
-              <input type="hidden" name="action" value="add" />
-              <input type="hidden" name="view" value="{{ view }}" />
-              <input type="hidden" name="rate" value="{{ rate }}" />
-              <input type="hidden" name="guild" value="{{ current_guild or '' }}" />
-              <input type="hidden" name="user_id" value="{{ p.id }}" />
-              <input type="hidden" name="slot" value="a" class="roster-player-row__slot-input" />
-              <button type="button" class="roster-action-btn roster-action-btn--add js-roster-add-btn">Add to Roster</button>
-            </form>
-            {% endif %}
-          {% else %}
-            <span class="roster-player-row__placeholder">—</span>
-          {% endif %}
-        </div>
-      </div>
-    </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <p class="card__lede small muted roster-available__empty">No players match this list yet (guild tags come from Discord roles on sign-in).</p>
-  {% endif %}
-</section>
 <script>
   (function () {
-    document.querySelectorAll(".js-roster-add-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var form = btn.closest("form");
-        if (!form) return;
-        var slotInput = form.querySelector('input[name="slot"]');
-        if (!slotInput) return;
-        var answer = window.prompt(
-          "Add to which roster?\n\nEnter A for Roster A, or B for Roster B:",
-          "A"
-        );
-        if (answer === null) return;
-        var c = String(answer).trim().toUpperCase();
-        if (c !== "A" && c !== "B") {
-          window.alert("Please enter A or B.");
-          return;
-        }
-        slotInput.value = c === "B" ? "b" : "a";
-        form.submit();
+    var app = document.getElementById("pb-app");
+    if (!app) return;
+
+    var VIEW = (app.getAttribute("data-view") || "alliance").toLowerCase();
+    var GUILD = (app.getAttribute("data-guild") || "").trim().toLowerCase();
+    var CAN_MANAGE = app.getAttribute("data-can-manage") === "1";
+    var USER_ID = {{ user.id }};
+    var API = "/api/port-battles";
+    var PORT_NAMES = {{ port_names | tojson }};
+    var activeId = null;
+    var detail = null;
+    var myFleet = null;
+    var detailPoll = null;
+    var listPoll = null;
+    var detailFp = "";
+    var loadingList = false;
+    var loadingDetail = false;
+    var rememberedShipByBattle = {};
+    var selectedReadyByBattle = {};
+    var guildSort = "guild_asc";
+
+    function qs() {
+      var q = "view=" + encodeURIComponent(VIEW);
+      if (VIEW === "guild" && GUILD) q += "&guild=" + encodeURIComponent(GUILD);
+      return q;
+    }
+    function el(id) { return document.getElementById(id); }
+    function setErr(id, msg) {
+      var n = el(id);
+      if (!n) return;
+      n.textContent = msg || "";
+      n.classList.toggle("pb-hidden", !msg);
+    }
+
+    async function api(method, path, body) {
+      var opt = { method: method, credentials: "same-origin", headers: {} };
+      if (body !== undefined) {
+        opt.headers["Content-Type"] = "application/json";
+        opt.body = JSON.stringify(body);
+      }
+      var r = await fetch(API + path, opt);
+      if (r.status === 401) {
+        window.location.href = "/auth/login";
+        throw new Error("auth");
+      }
+      var t = await r.text();
+      var j = null;
+      try { j = t ? JSON.parse(t) : null; } catch (e) { j = { detail: t }; }
+      if (!r.ok) throw new Error((j && j.detail) || t || r.statusText);
+      return j;
+    }
+
+    function calcFp(d) {
+      if (!d) return "";
+      var ready = (d.readied || []).map(function (r) { return r.user_id + ":" + r.ship_id; }).sort().join("|");
+      var lineup = (d.lineup || []).map(function (r) { return r.slot_index + ":" + (r.user_id || ""); }).join("|");
+      return [d.status, ready, lineup, (d.lineup_counts || {}).primary || 0, (d.lineup_counts || {}).ally || 0].join(";");
+    }
+
+    function fillPorts() {
+      var dl = el("pb-port-datalist");
+      if (!dl) return;
+      dl.innerHTML = "";
+      (PORT_NAMES || []).forEach(function (p) {
+        var o = document.createElement("option");
+        o.value = p;
+        dl.appendChild(o);
       });
-    });
+    }
+
+    async function loadList() {
+      if (loadingList) return;
+      loadingList = true;
+      var msg = el("pb-list-msg");
+      if (msg) msg.textContent = "Loading...";
+      try {
+        var data = await api("GET", "?" + qs());
+        var ul = el("pb-session-list");
+        ul.innerHTML = "";
+        (data.sessions || []).forEach(function (s) {
+          var li = document.createElement("li");
+          var b = document.createElement("button");
+          b.type = "button";
+          b.dataset.sessionId = String(s.id);
+          b.textContent = s.port_name;
+          if (activeId === s.id) b.classList.add("is-active");
+          b.addEventListener("click", function () { selectBattle(s.id); });
+          li.appendChild(b);
+          ul.appendChild(li);
+        });
+        if (msg) msg.textContent = (data.sessions || []).length ? "" : "No battles yet.";
+      } catch (e) {
+        if (msg) msg.textContent = String(e.message || e);
+      } finally {
+        loadingList = false;
+      }
+    }
+
+    function renderStatus(d) {
+      var lc = d.lineup_counts || {};
+      var perSide = d.per_side || 0;
+      var primary = lc.primary || 0;
+      var ally = lc.ally || 0;
+      var allyCap = lc.ally_cap || 0;
+      var total = primary + ally;
+      el("pb-status-defending").textContent = (d.primary_guild_slug || "").toUpperCase() || "—";
+      el("pb-status-primary").textContent = primary + "/" + perSide;
+      el("pb-status-allies").textContent = ally + "/" + allyCap;
+      el("pb-status-players").textContent = total + "/" + perSide;
+      el("pb-detail-meta").textContent = d.port_name + " · " + (d.rate_text || "") + " · " + (d.pvp_label || "");
+      var vd = d.voice_debug || {};
+      var msg = "Voice debug: scanned " + (vd.scanned_members || 0) + " guild members, connected " + (vd.connected_members || 0) + ".";
+      msg += " Tracker running: " + (vd.tracker_running ? "yes" : "no") + ", tracker connected users: " + (vd.tracker_connected_users || 0) + ".";
+      if (vd.tracker_last_error) msg += " Last tracker error: " + vd.tracker_last_error + ".";
+      if (vd.warning) msg += " " + vd.warning;
+      el("pb-voice-debug").textContent = msg;
+      var endBtn = el("pb-end-battle");
+      if (endBtn) endBtn.classList.toggle("pb-hidden", !(CAN_MANAGE && d.status === "open"));
+    }
+
+    async function ensureMyFleet() {
+      if (myFleet) return myFleet;
+      var r = await fetch("/api/profile/ships", { credentials: "same-origin" });
+      if (!r.ok) throw new Error("Could not load your ship list.");
+      myFleet = await r.json();
+      return myFleet;
+    }
+
+    function selectHtml(options, selectedId) {
+      return "<select class='roster-guild-bar__select pb-select-wide'>" +
+        options.map(function (o) {
+          var sel = o.instance_id === selectedId ? " selected" : "";
+          return "<option value='" + o.instance_id + "'" + sel + ">" + (o.ship_id || "") + "</option>";
+        }).join("") +
+        "</select>";
+    }
+
+    async function moveUserToRoster(battleId, userId) {
+      await api("POST", "/" + battleId + "/lineup/assign-ready", { user_id: userId });
+      await refreshActiveBattle();
+    }
+
+    function selectedMapForBattle(battleId) {
+      var k = String(battleId || "");
+      if (!selectedReadyByBattle[k]) selectedReadyByBattle[k] = {};
+      return selectedReadyByBattle[k];
+    }
+
+    function updateMoveSelectedBtn(battleId) {
+      var btn = el("pb-move-selected");
+      if (!btn) return;
+      var picked = Object.keys(selectedMapForBattle(battleId)).length;
+      btn.classList.toggle("pb-hidden", !(CAN_MANAGE && battleId && picked > 0));
+      btn.textContent = picked > 0 ? ("Move Selected (" + picked + ")") : "Move Selected";
+    }
+
+    function comparePlayerRows(a, b, readyById) {
+      var aReady = !!(readyById[a.user_id] || false);
+      var bReady = !!(readyById[b.user_id] || false);
+      if (aReady !== bReady) return aReady ? -1 : 1;
+
+      var ag = String(a.guild_tag || "").toLowerCase();
+      var bg = String(b.guild_tag || "").toLowerCase();
+      if (ag !== bg) {
+        if (guildSort === "guild_desc") return ag < bg ? 1 : -1;
+        return ag < bg ? -1 : 1;
+      }
+      var ad = String(a.display || "").toLowerCase();
+      var bd = String(b.display || "").toLowerCase();
+      return ad < bd ? -1 : ad > bd ? 1 : 0;
+    }
+
+    async function renderPlayers(d) {
+      var playerList = el("pb-player-list");
+      var rosterList = el("pb-roster-list");
+      var rosterPanel = el("pb-roster-panel");
+      playerList.innerHTML = "";
+      rosterList.innerHTML = "";
+      rosterList.classList.toggle("pb-drop-enabled", CAN_MANAGE && d.status === "open");
+      if (rosterPanel) rosterPanel.classList.toggle("pb-drop-enabled", CAN_MANAGE && d.status === "open");
+
+      var readyById = {};
+      (d.readied || []).forEach(function (r) { readyById[r.user_id] = r; });
+      var lineupUserIds = {};
+      (d.lineup || []).forEach(function (l) { if (l.user_id) lineupUserIds[l.user_id] = true; });
+      var selectedReady = selectedMapForBattle(d.id);
+      Object.keys(selectedReady).forEach(function (rawUid) {
+        var uid = Number(rawUid || "0");
+        if (!uid || lineupUserIds[uid]) delete selectedReady[rawUid];
+      });
+
+      var voiceConnected = (d.voice_pool || []).filter(function (v) {
+        return !!v.in_voice && !lineupUserIds[v.user_id];
+      });
+      voiceConnected.sort(function (a, b) { return comparePlayerRows(a, b, readyById); });
+      var fleetShips = [];
+      try {
+        if (d.status === "open") fleetShips = ((await ensureMyFleet()).ships || []);
+      } catch (e) {}
+
+      if (!voiceConnected.length) {
+        var empty = document.createElement("div");
+        empty.className = "pb-table-row";
+        var warn = (d.voice_debug && d.voice_debug.warning) || "No members currently detected in Discord voice.";
+        empty.innerHTML = "<div style='grid-column:1 / -1' class='small muted'>" + warn + "</div>";
+        playerList.appendChild(empty);
+      }
+
+      voiceConnected.forEach(function (p) {
+        var row = document.createElement("div");
+        row.className = "pb-table-row" + (readyById[p.user_id] ? " is-ready" : "") + (CAN_MANAGE ? " pb-manage-grid" : "");
+        var canMove = CAN_MANAGE && d.status === "open" && !lineupUserIds[p.user_id];
+        if (canMove) {
+          row.setAttribute("draggable", "true");
+          row.classList.add("pb-draggable");
+          row.addEventListener("dragstart", function (ev) {
+            ev.dataTransfer.setData("text/plain", String(p.user_id));
+            ev.dataTransfer.effectAllowed = "move";
+          });
+        }
+
+        var shipCell = "Not ready";
+        if (p.user_id === USER_ID && d.status === "open") {
+          var remembered = rememberedShipByBattle[String(d.id)] || "";
+          var selectedInstanceId = (readyById[p.user_id] || {}).instance_id || remembered;
+          shipCell = fleetShips.length ? selectHtml(fleetShips, selectedInstanceId) : "<span class='muted'>No ships in My ships</span>";
+        } else if (readyById[p.user_id]) {
+          shipCell = readyById[p.user_id].ship_name || readyById[p.user_id].ship_id;
+        }
+
+        row.innerHTML =
+          (CAN_MANAGE ? "<div class='pb-check-cell'></div>" : "") +
+          "<div>" + (p.display || "") + "</div>" +
+          "<div>" + (p.guild_tag || "—") + "</div>" +
+          "<div class='pb-ship-cell'>" + shipCell + "</div>" +
+          "<div class='pb-action-cell'></div>";
+        var checkCell = row.querySelector(".pb-check-cell");
+        var action = row.querySelector(".pb-action-cell");
+
+        if (p.user_id === USER_ID && d.status === "open") {
+          var isReady = !!readyById[p.user_id];
+          var btn = document.createElement("button");
+          btn.className = "btn btn--ghost btn--sm pb-ready-btn";
+          btn.textContent = isReady ? "READY" : "UNREADY";
+          if (isReady) btn.classList.add("is-ready");
+          btn.addEventListener("click", async function () {
+            try {
+              if (isReady) {
+                await api("DELETE", "/" + d.id + "/ready");
+              } else {
+                var select = row.querySelector("select");
+                if (!select || !select.value) return;
+                rememberedShipByBattle[String(d.id)] = select.value;
+                await api("POST", "/" + d.id + "/ready", { instance_id: select.value });
+              }
+              await refreshActiveBattle();
+            } catch (e) { setErr("pb-create-err", String(e.message || e)); }
+          });
+          action.appendChild(btn);
+          var selEl = row.querySelector("select");
+          if (selEl) {
+            selEl.addEventListener("change", function () {
+              rememberedShipByBattle[String(d.id)] = selEl.value || "";
+            });
+          }
+        } else if (!canMove) {
+          action.innerHTML = "<span class='small muted'>—</span>";
+        }
+        if (CAN_MANAGE && checkCell) {
+          var ck = document.createElement("input");
+          ck.type = "checkbox";
+          ck.className = "pb-move-check";
+          ck.checked = !!selectedReady[p.user_id];
+          ck.title = "Select player to move";
+          ck.setAttribute("aria-label", "Select player to move");
+          ck.addEventListener("change", function () {
+            if (ck.checked) selectedReady[p.user_id] = true;
+            else delete selectedReady[p.user_id];
+            updateMoveSelectedBtn(d.id);
+          });
+          checkCell.appendChild(ck);
+        }
+        playerList.appendChild(row);
+      });
+
+      (d.lineup || []).filter(function (x) { return !!x.user_id; }).forEach(function (r) {
+        var row = document.createElement("div");
+        row.className = "pb-table-row is-ready" + (CAN_MANAGE ? " pb-manage-grid" : "");
+        row.innerHTML =
+          (CAN_MANAGE ? "<div class='pb-check-cell'><span class='small muted'>—</span></div>" : "") +
+          "<div>" + (r.display || "") + "</div>" +
+          "<div>" + (r.guild_tag || "—") + "</div>" +
+          "<div>" + ((r.ship_name || r.ship_id || "—")) + "</div>" +
+          "<div class='pb-action-cell'></div>";
+        var action = row.querySelector(".pb-action-cell");
+        if (CAN_MANAGE && d.status === "open") {
+          var rm = document.createElement("button");
+          rm.className = "btn btn--ghost btn--sm";
+          rm.textContent = "Remove";
+          rm.addEventListener("click", async function () {
+            try {
+              await api("DELETE", "/" + d.id + "/lineup/user/" + r.user_id);
+              await refreshActiveBattle();
+            } catch (e) { setErr("pb-create-err", String(e.message || e)); }
+          });
+          action.appendChild(rm);
+        } else {
+          action.innerHTML = "<span class='small muted'>READY</span>";
+        }
+        rosterList.appendChild(row);
+      });
+
+      if (CAN_MANAGE && d.status === "open" && rosterPanel) {
+        rosterPanel.ondragover = function (ev) {
+          ev.preventDefault();
+          rosterPanel.classList.add("is-drop-target");
+        };
+        rosterPanel.ondragleave = function () {
+          rosterPanel.classList.remove("is-drop-target");
+        };
+        rosterPanel.ondrop = async function (ev) {
+          ev.preventDefault();
+          rosterPanel.classList.remove("is-drop-target");
+          var raw = ev.dataTransfer.getData("text/plain");
+          var uid = Number(raw || "0");
+          if (!uid) return;
+          try {
+            await moveUserToRoster(d.id, uid);
+          } catch (e) { setErr("pb-create-err", String(e.message || e)); }
+        };
+      } else {
+        if (rosterPanel) {
+          rosterPanel.ondragover = null;
+          rosterPanel.ondragleave = null;
+          rosterPanel.ondrop = null;
+          rosterPanel.classList.remove("is-drop-target");
+        }
+      }
+      updateMoveSelectedBtn(d.id);
+    }
+
+    async function renderAll(d) {
+      detail = d;
+      detailFp = calcFp(d);
+      renderStatus(d);
+      await renderPlayers(d);
+    }
+
+    async function refreshActiveBattle() {
+      if (!activeId) return;
+      var d = await api("GET", "/" + activeId + "?include_voice=1");
+      await renderAll(d);
+    }
+
+    async function selectBattle(id) {
+      activeId = id;
+      try {
+        var d = await api("GET", "/" + id + "?include_voice=1");
+        await renderAll(d);
+        Array.prototype.forEach.call(document.querySelectorAll("#pb-session-list button"), function (b) {
+          b.classList.toggle("is-active", Number(b.dataset.sessionId || "0") === Number(id));
+        });
+        startPolling();
+      } catch (e) {
+        setErr("pb-create-err", String(e.message || e));
+      }
+    }
+
+    async function pollDetail() {
+      if (!activeId) return;
+      if (loadingDetail) return;
+      loadingDetail = true;
+      try {
+        var d = await api("GET", "/" + activeId + "?include_voice=1");
+        var fp = calcFp(d);
+        if (fp !== detailFp) await renderAll(d);
+      } catch (e) {
+      } finally {
+        loadingDetail = false;
+      }
+    }
+
+    function startPolling() {
+      if (listPoll) clearInterval(listPoll);
+      if (detailPoll) clearInterval(detailPoll);
+      listPoll = setInterval(function () { if (document.visibilityState === "visible") loadList(); }, 15000);
+      detailPoll = setInterval(function () { if (document.visibilityState === "visible") pollDetail(); }, 7000);
+    }
+
+    if (CAN_MANAGE) {
+      var moveSelectedBtn = el("pb-move-selected");
+      if (moveSelectedBtn) {
+        moveSelectedBtn.addEventListener("click", async function () {
+          if (!detail || !detail.id) return;
+          var pickedMap = selectedMapForBattle(detail.id);
+          var ids = Object.keys(pickedMap).map(function (x) { return Number(x || "0"); }).filter(function (x) { return !!x; });
+          if (!ids.length) return;
+          moveSelectedBtn.disabled = true;
+          try {
+            var moved = 0;
+            var skipped = 0;
+            for (var i = 0; i < ids.length; i += 1) {
+              try {
+                await api("POST", "/" + detail.id + "/lineup/assign-ready", { user_id: ids[i] });
+                moved += 1;
+              } catch (e1) {
+                skipped += 1;
+              }
+            }
+            selectedReadyByBattle[String(detail.id)] = {};
+            await refreshActiveBattle();
+            if (skipped > 0) {
+              setErr("pb-create-err", "Moved " + moved + " player(s). Skipped " + skipped + " (not ready or already in roster).");
+            } else {
+              setErr("pb-create-err", "");
+            }
+          } catch (e) {
+            setErr("pb-create-err", String(e.message || e));
+          } finally {
+            moveSelectedBtn.disabled = false;
+          }
+        });
+      }
+      fillPorts();
+      el("pb-end-battle").addEventListener("click", async function () {
+        if (!activeId) return;
+        if (!window.confirm("End this battle?")) return;
+        try {
+          await api("DELETE", "/" + activeId);
+          activeId = null;
+          detail = null;
+          detailFp = "";
+          el("pb-status-defending").textContent = "—";
+          el("pb-status-primary").textContent = "0/0";
+          el("pb-status-allies").textContent = "0/0";
+          el("pb-status-players").textContent = "0/0";
+          el("pb-player-list").innerHTML = "";
+          el("pb-roster-list").innerHTML = "";
+          loadList();
+        } catch (e) { setErr("pb-create-err", String(e.message || e)); }
+      });
+      el("pb-create-submit").addEventListener("click", async function () {
+        var port = (el("pb-create-port").value || "").trim();
+        var primary = (el("pb-create-primary").value || "").trim().toLowerCase();
+        try {
+          var created = await api("POST", "?" + qs(), { port_name: port, primary_guild_slug: primary, ship_mix: [] });
+          el("pb-create-port").value = "";
+          await loadList();
+          await selectBattle(created.id);
+        } catch (e) { setErr("pb-create-err", String(e.message || e)); }
+      });
+    }
+
+    var sortEl = el("pb-sort-guild");
+    if (sortEl) {
+      sortEl.addEventListener("change", function () {
+        guildSort = sortEl.value || "guild_asc";
+        if (detail) renderPlayers(detail);
+      });
+    }
+
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { loadList(); pollDetail(); } });
+    loadList();
+    startPolling();
   })();
 </script>
 {% endblock %}

@@ -1,4 +1,7 @@
+import asyncio
 import secrets
+import time
+from collections.abc import Iterable
 from urllib.parse import urlencode
 
 import httpx
@@ -8,6 +11,11 @@ from app.config import Settings
 DISCORD_API = "https://discord.com/api/v10"
 OAUTH_AUTHORIZE = "https://discord.com/oauth2/authorize"
 OAUTH_TOKEN = "https://discord.com/api/oauth2/token"
+_MEMBERS_CACHE_TTL_S = 30.0
+_VOICE_CACHE_TTL_S = 12.0
+_members_cache: dict[str, tuple[float, list[dict[str, str | list[str] | None]]]] = {}
+_voice_cache: dict[str, tuple[float, str | None]] = {}
+_widget_voice_cache: dict[str, tuple[float, list[dict[str, str | None]]]] = {}
 
 
 def build_authorize_url(settings: Settings, state: str) -> str:
@@ -141,6 +149,167 @@ async def fetch_members_with_role(
         return (row.get("nick") or row.get("global_name") or row.get("username") or "").lower()
 
     out.sort(key=sort_key)
+    return out
+
+
+async def fetch_all_guild_members(
+    settings: Settings,
+    *,
+    max_pages: int = 25,
+) -> list[dict[str, str | list[str] | None]]:
+    """Return basic guild member rows for all members (id/display/roles)."""
+    if not settings.discord_bot_token or not settings.discord_guild_id:
+        return []
+    guild_id = settings.discord_guild_id
+    now = time.time()
+    cached = _members_cache.get(guild_id)
+    if cached and (now - cached[0]) < _MEMBERS_CACHE_TTL_S:
+        return list(cached[1])
+    headers = {"Authorization": f"Bot {settings.discord_bot_token}"}
+    out: list[dict[str, str | list[str] | None]] = []
+    after: str | None = None
+    async with httpx.AsyncClient() as client:
+        for _ in range(max_pages):
+            params: dict[str, str] = {"limit": "1000"}
+            if after:
+                params["after"] = after
+            r = await client.get(
+                f"{DISCORD_API}/guilds/{guild_id}/members",
+                headers=headers,
+                params=params,
+                timeout=45.0,
+            )
+            r.raise_for_status()
+            batch = r.json()
+            if not isinstance(batch, list) or not batch:
+                break
+            for m in batch:
+                u = m.get("user") or {}
+                uid = str(u.get("id") or "").strip()
+                if not uid:
+                    continue
+                roles = m.get("roles") if isinstance(m.get("roles"), list) else []
+                out.append(
+                    {
+                        "id": uid,
+                        "username": str(u.get("username") or ""),
+                        "global_name": u.get("global_name"),
+                        "nick": m.get("nick"),
+                        "roles": [str(x) for x in roles],
+                    }
+                )
+            if len(batch) < 1000:
+                break
+            last_user = (batch[-1].get("user") or {}).get("id")
+            if not last_user:
+                break
+            after = str(last_user)
+    _members_cache[guild_id] = (time.time(), list(out))
+    return out
+
+
+async def fetch_users_voice_states(
+    settings: Settings,
+    discord_user_ids: Iterable[str],
+    *,
+    filter_channel_id: str | None = None,
+    max_concurrent: int = 8,
+) -> dict[str, dict[str, str | None]]:
+    """Per-user voice state via REST (no guild-wide list in Discord API).
+
+    Returns ``discord_user_id -> {"channel_id": str|None}``. Missing token or guild yields ``{}``.
+    If ``filter_channel_id`` is set, only users in that channel get a non-null ``channel_id``.
+    """
+    if not settings.discord_bot_token or not settings.discord_guild_id:
+        return {}
+
+    ids = [str(x).strip() for x in discord_user_ids if str(x).strip().isdigit()]
+    if not ids:
+        return {}
+
+    now = time.time()
+    guild_id = settings.discord_guild_id
+    headers = {"Authorization": f"Bot {settings.discord_bot_token}"}
+    want_ch = (filter_channel_id or "").strip() or None
+    sem = asyncio.Semaphore(max(1, min(16, max_concurrent)))
+    out: dict[str, dict[str, str | None]] = {}
+    to_fetch: list[str] = []
+    for uid in ids:
+        cached = _voice_cache.get(uid)
+        if cached and (now - cached[0]) < _VOICE_CACHE_TTL_S:
+            ch_cached = cached[1]
+            if want_ch is not None and ch_cached != want_ch:
+                ch_cached = None
+            out[uid] = {"channel_id": ch_cached}
+        else:
+            to_fetch.append(uid)
+
+    async def one(client: httpx.AsyncClient, uid: str) -> None:
+        async with sem:
+            url = f"{DISCORD_API}/guilds/{guild_id}/voice-states/{uid}"
+            try:
+                r = await client.get(url, headers=headers, timeout=20.0)
+                if r.status_code == 404:
+                    out[uid] = {"channel_id": None}
+                    return
+                r.raise_for_status()
+                data = r.json()
+                ch = str(data.get("channel_id") or "").strip() or None
+                if want_ch is not None and ch != want_ch:
+                    ch = None
+                out[uid] = {"channel_id": ch}
+            except (httpx.HTTPError, ValueError, TypeError):
+                out[uid] = {"channel_id": None}
+
+    async with httpx.AsyncClient() as client:
+        await asyncio.gather(*(one(client, uid) for uid in to_fetch))
+    for uid, row in out.items():
+        _voice_cache[uid] = (time.time(), row.get("channel_id"))
+    return out
+
+
+async def fetch_widget_voice_members(
+    settings: Settings,
+) -> list[dict[str, str | None]]:
+    """Fallback voice source via guild widget (requires server widget enabled)."""
+    guild_id = (settings.discord_guild_id or "").strip()
+    if not guild_id:
+        return []
+    now = time.time()
+    cached = _widget_voice_cache.get(guild_id)
+    if cached and (now - cached[0]) < _VOICE_CACHE_TTL_S:
+        return list(cached[1])
+    url = f"{DISCORD_API}/guilds/{guild_id}/widget.json"
+    out: list[dict[str, str | None]] = []
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, timeout=20.0)
+            r.raise_for_status()
+            data = r.json()
+    except (httpx.HTTPError, ValueError, TypeError):
+        return []
+    members = data.get("members") if isinstance(data, dict) else None
+    if not isinstance(members, list):
+        return []
+    for m in members:
+        if not isinstance(m, dict):
+            continue
+        channel_id = str(m.get("channel_id") or "").strip()
+        if not channel_id:
+            continue
+        uid = str(m.get("id") or "").strip()
+        if not uid:
+            continue
+        out.append(
+            {
+                "id": uid,
+                "username": str(m.get("username") or ""),
+                "global_name": str(m.get("global_name") or ""),
+                "nick": str(m.get("nick") or ""),
+                "channel_id": channel_id,
+            }
+        )
+    _widget_voice_cache[guild_id] = (time.time(), list(out))
     return out
 
 

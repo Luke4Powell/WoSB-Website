@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     discord_redirect_uri: str = "http://127.0.0.1:8000/auth/callback"
     discord_bot_token: str = ""
     discord_guild_id: str = ""
+    # Optional: only treat users in this voice channel as "in roster voice" (Discord snowflake). Empty = any voice.
+    discord_roster_voice_channel_id: str = ""
 
     discord_role_admiral_id: str = ""
     discord_role_leader_id: str = ""
