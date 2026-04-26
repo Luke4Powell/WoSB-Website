@@ -12,7 +12,12 @@ from app.config import get_settings
 from app.db import get_db
 from app.deps import require_user_redirect
 from app.models import RepairReimbursementRequest, User
-from app.reimbursement.access import can_review_reimbursement_requests, can_submit_reimbursement
+from app.reimbursement.access import (
+    can_review_reimbursement_request_for_tag,
+    can_review_reimbursement_requests,
+    can_submit_reimbursement,
+    reimbursement_enabled_guild_tags,
+)
 from app.reimbursement.material_rates import RATE_BY_KEY, REIMBURSEMENT_MATERIALS
 from app.reimbursement.storage import reimbursement_upload_dir, save_reimbursement_image
 from app.web_static import static_asset_version
@@ -83,7 +88,7 @@ async def _get_request_or_404(db: AsyncSession, rid: int) -> RepairReimbursement
 def _can_view_request_images(user: User, req: RepairReimbursementRequest) -> bool:
     if req.user_id == user.id:
         return True
-    return can_review_reimbursement_requests(user)
+    return can_review_reimbursement_request_for_tag(user, req.submitter_guild_tag)
 
 
 @router.get("/tools/repair-reimbursement", response_class=HTMLResponse)
@@ -105,10 +110,14 @@ async def repair_reimbursement_page(
     pending_for_review: list[RepairReimbursementRequest] = []
     submitters: dict[int, User] = {}
     if can_review_reimbursement_requests(user):
+        reviewer_tag = (user.home_guild_tag or "").strip().upper()
         pending_for_review = (
             await db.execute(
                 select(RepairReimbursementRequest)
-                .where(RepairReimbursementRequest.status == "pending")
+                .where(
+                    RepairReimbursementRequest.status == "pending",
+                    RepairReimbursementRequest.submitter_guild_tag == reviewer_tag,
+                )
                 .order_by(RepairReimbursementRequest.created_at.asc())
             )
         ).scalars().all()
@@ -125,6 +134,7 @@ async def repair_reimbursement_page(
             settings,
             user=user,
             materials=REIMBURSEMENT_MATERIALS,
+            reimbursement_enabled_tags=sorted(reimbursement_enabled_guild_tags()),
             can_review=can_review_reimbursement_requests(user),
             my_requests=mine,
             pending_for_review=pending_for_review,
@@ -257,10 +267,9 @@ async def review_reimbursement_detail(
     user: Annotated[User, Depends(require_user_redirect)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    if not can_review_reimbursement_requests(user):
-        raise HTTPException(status_code=403, detail="Officers only.")
-
     req = await _get_request_or_404(db, rid)
+    if not can_review_reimbursement_request_for_tag(user, req.submitter_guild_tag):
+        raise HTTPException(status_code=403, detail="Not allowed for this guild request.")
     if req.status != "pending":
         return RedirectResponse("/tools/repair-reimbursement", status_code=303)
 
@@ -294,10 +303,9 @@ async def mark_reimbursement_paid(
     db: Annotated[AsyncSession, Depends(get_db)],
     payout_image: UploadFile = File(...),
 ):
-    if not can_review_reimbursement_requests(user):
-        raise HTTPException(status_code=403, detail="Officers only.")
-
     req = await _get_request_or_404(db, rid)
+    if not can_review_reimbursement_request_for_tag(user, req.submitter_guild_tag):
+        raise HTTPException(status_code=403, detail="Not allowed for this guild request.")
     if req.status != "pending":
         raise HTTPException(status_code=400, detail="This request is not pending.")
 

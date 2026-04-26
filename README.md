@@ -169,14 +169,24 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 3. Copy **Client ID** and **Client Secret** into `.env`.
 4. Under **Bot**, create a bot and copy the token into `DISCORD_BOT_TOKEN`. Invite the bot to your server with permissions that allow it to read members (membership in the server is enough for the REST member lookup in most setups).
 5. Enable **Developer Mode** in Discord, right-click your server and **Copy Server ID** → `DISCORD_GUILD_ID`. Right-click roles → **Copy Role ID** for Admiral, Leader, and Alliance Leader.
+6. Copy your baseline faction Member role ID into `DISCORD_ROLE_MEMBER_ID`. Website access now requires this role (leadership/officer roles still count as members).
 
 ## Permission mapping (current code)
 
 - **Admiral** or **Leader**: treated as able to manage guild rosters (once those pages exist); both can read all profiles (same flags used for “officer” visibility later).
 - **Alliance Leader**: can edit the alliance roster team (once that UI exists).
-- Everyone who completes OAuth and is found in the guild is a baseline **member**.
+- **Member**: baseline website role for normal players.
+- Users missing **Member** (and without leadership/officer roles) can sign in with Discord but are denied website access.
 
 Roles are **refreshed on each successful sign-in** from Discord.
+
+## Reimbursement policy configuration
+
+- `REIMBURSEMENT_ENABLED_GUILD_TAGS` controls which home guild tags may submit reimbursement requests.
+- Default is `TIF,BWC`.
+- To enable more guilds later, append tags in `.env`, for example: `TIF,BWC,SVA,LP`.
+- Review/approval is guild-scoped: Admiral, Leader, or Officer can only review requests whose `submitter_guild_tag`
+  matches their own `home_guild_tag`.
 
 ## What is implemented now
 

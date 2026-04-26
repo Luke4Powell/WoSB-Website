@@ -37,4 +37,18 @@
     <a class="btn btn--primary btn--sm" href="/tools">Tools</a>
   </div>
 </header>
+<section class="panel">
+  <div class="panel__row">
+    <div>
+      <h2 class="panel__title">Website roles</h2>
+      <p class="panel__text">
+        {% if user.is_member %}<span class="card__badge">Member</span>{% endif %}
+        {% if user.is_officer %}<span class="card__badge">Officer</span>{% endif %}
+        {% if user.is_leader %}<span class="card__badge">Leader</span>{% endif %}
+        {% if user.is_admiral %}<span class="card__badge">Admiral</span>{% endif %}
+        {% if user.is_alliance_leader %}<span class="card__badge">Alliance Leader</span>{% endif %}
+      </p>
+    </div>
+  </div>
+</section>
 {% endblock %}

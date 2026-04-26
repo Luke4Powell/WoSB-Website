@@ -102,6 +102,9 @@ Edit `.env` with real values:
 - `DISCORD_BOT_TOKEN`
 - `DISCORD_GUILD_ID`
 - role IDs (`DISCORD_ROLE_*`)
+  - include `DISCORD_ROLE_MEMBER_ID` for baseline website access
+- reimbursement policy:
+  - `REIMBURSEMENT_ENABLED_GUILD_TAGS=TIF,BWC` (add `,SVA,LP` later if those guilds enable payouts)
 - optionally `DATABASE_URL` (recommended: Postgres for long-term production)
 
 Important for OAuth:

@@ -37,7 +37,15 @@
   <div class="reimb-instructions__split">
     <div class="reimb-instructions__left">
       <p class="card__lede small muted reimb-instructions__intro">
-        <strong>TIF</strong> and <strong>BWC</strong> members can apply for reimbursement requests via this tool.
+        {% if reimbursement_enabled_tags %}
+        Members in
+        {% for tag in reimbursement_enabled_tags %}
+        <strong>{{ tag }}</strong>{% if not loop.last %}{% if loop.index0 == (reimbursement_enabled_tags|length - 2) %} and {% else %}, {% endif %}{% endif %}
+        {% endfor %}
+        can apply for reimbursement requests via this tool.
+        {% else %}
+        Reimbursement submissions are currently disabled for all guilds.
+        {% endif %}
         Open <strong>Major repair</strong> in game and select
         <strong>For resources and gold</strong> (see the example screenshot) so both materials and gold appear. Count
         each material and the gold line from that screen, enter them below, and attach a
@@ -204,7 +212,7 @@
 <section class="card card--lift card--accent" id="review">
   <div class="card__head">
     <h2 class="card__title">Officer review</h2>
-    <span class="card__badge">Admiral / Leader</span>
+    <span class="card__badge">Admiral / Leader / Officer (your guild only)</span>
   </div>
   {% if not pending_for_review %}
   <p class="card__lede small muted" style="margin-top: 0">No pending requests.</p>

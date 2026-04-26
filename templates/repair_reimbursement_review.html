@@ -3,7 +3,12 @@
 {% block content %}
 <header class="page-head page-head--compact">
   <div>
-    <p class="eyebrow">Officer review</p>
+    <p class="eyebrow">
+      Officer review · guild scoped
+      {% if req.submitter_guild_tag %}
+      · queue: {{ req.submitter_guild_tag }}
+      {% endif %}
+    </p>
     <h1 class="page-head__title">Request #{{ req.id }}</h1>
     <p class="page-head__meta muted">
       Submitted by <strong class="text-bright">{% if submitter %}{{ display_name(submitter) }}{% else %}unknown user{% endif %}</strong>

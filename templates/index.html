@@ -62,6 +62,11 @@
   <span class="banner__icon" aria-hidden="true">!</span>
   <span>Discord did not return an authorization code. Use Sign in from this page again.</span>
 </div>
+{% elif request.query_params.get("auth_error") == "missing_member_role" %}
+<div class="banner banner--error" role="alert">
+  <span class="banner__icon" aria-hidden="true">!</span>
+  <span>Your Discord account is in the server, but missing the required Member role for website access.</span>
+</div>
 {% endif %}
 
 {% if user %}

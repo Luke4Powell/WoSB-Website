@@ -26,12 +26,15 @@ class Settings(BaseSettings):
     discord_role_leader_id: str = ""
     discord_role_alliance_leader_id: str = ""
     discord_role_officer_id: str = ""
+    discord_role_member_id: str = ""
 
     # Optional: assign members to a guild roster tab from these Discord roles (right-click role → Copy ID).
     discord_role_guild_tif_id: str = ""
     discord_role_guild_bwc_id: str = ""
     discord_role_guild_sva_id: str = ""
     discord_role_guild_lp_id: str = ""
+    # Comma-separated home guild tags allowed to submit reimbursement claims.
+    reimbursement_enabled_guild_tags: str = "TIF,BWC"
 
     # Full URL path to a file under ./static/ (e.g. /static/images/harbour.jpg). Leave empty for no photo layer.
     site_background_image: str = ""
@@ -45,6 +48,13 @@ class Settings(BaseSettings):
         if not v.startswith("/static/"):
             raise ValueError("SITE_BACKGROUND_IMAGE must start with /static/ (example: /static/images/harbour.jpg)")
         return v
+
+    @field_validator("reimbursement_enabled_guild_tags")
+    @classmethod
+    def validate_reimbursement_enabled_guild_tags(cls, v: str) -> str:
+        # Normalize for predictable comparisons and cleaner display in templates.
+        tags = [part.strip().upper() for part in (v or "").split(",") if part.strip()]
+        return ",".join(tags)
 
 
 @lru_cache

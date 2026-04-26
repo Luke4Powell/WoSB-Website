@@ -83,6 +83,20 @@ def _sqlite_add_user_is_officer(connection) -> None:
     connection.execute(text("ALTER TABLE users ADD COLUMN is_officer BOOLEAN NOT NULL DEFAULT 0"))
 
 
+def _sqlite_add_user_is_member(connection) -> None:
+    from sqlalchemy import inspect, text
+
+    if getattr(connection.dialect, "name", "") != "sqlite":
+        return
+    insp = inspect(connection)
+    if not insp.has_table("users"):
+        return
+    cols = {c["name"] for c in insp.get_columns("users")}
+    if "is_member" in cols:
+        return
+    connection.execute(text("ALTER TABLE users ADD COLUMN is_member BOOLEAN NOT NULL DEFAULT 0"))
+
+
 async def init_db() -> None:
     engine = get_engine()
     async with engine.begin() as conn:
@@ -90,6 +104,7 @@ async def init_db() -> None:
         await conn.run_sync(_sqlite_add_reimbursement_fight_description)
         await conn.run_sync(_sqlite_add_reimbursement_submitter_guild_tag)
         await conn.run_sync(_sqlite_add_user_is_officer)
+        await conn.run_sync(_sqlite_add_user_is_member)
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:
