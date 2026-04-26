@@ -150,7 +150,17 @@
       if (!d) return "";
       var ready = (d.readied || []).map(function (r) { return r.user_id + ":" + r.ship_id; }).sort().join("|");
       var lineup = (d.lineup || []).map(function (r) { return r.slot_index + ":" + (r.user_id || ""); }).join("|");
-      return [d.status, ready, lineup, (d.lineup_counts || {}).primary || 0, (d.lineup_counts || {}).ally || 0].join(";");
+      // Include live voice pool in fingerprint so Player List refreshes when members join/leave voice.
+      var voice = (d.voice_pool || [])
+        .map(function (v) {
+          var did = String(v.discord_id || "");
+          var uid = String(v.user_id || "");
+          var inVoice = v.in_voice ? "1" : "0";
+          return did + ":" + uid + ":" + inVoice;
+        })
+        .sort()
+        .join("|");
+      return [d.status, ready, lineup, (d.lineup_counts || {}).primary || 0, (d.lineup_counts || {}).ally || 0, voice].join(";");
     }
 
     function fillPorts() {
