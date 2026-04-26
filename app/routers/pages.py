@@ -20,6 +20,7 @@ from app.upgrades_catalog import (
 )
 from app.consumables_catalog import load_consumables_catalog
 from app.models import RepairReimbursementRequest, RosterAssignment, User
+from app.models.guild_port_order import GuildPortOrder
 from app.port_battle.logic import PortBattleProgramMissing, get_port_names
 from app.roster_data import (
     ALLIANCE_PAGE,
@@ -27,6 +28,7 @@ from app.roster_data import (
     default_roster_board_path,
     get_roster_page,
     guild_choices_for_roster,
+    home_tag_to_guild_slug,
     roster_board_url,
     roster_pool_eligible_user,
     user_can_open_guild_board,
@@ -38,6 +40,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 router = APIRouter(tags=["pages"])
+
+
+def _can_edit_guild_port_orders(user: User | None, guild_slug: str) -> bool:
+    if user is None:
+        return False
+    if not (user.is_officer or user.is_leader or user.is_admiral):
+        return False
+    return home_tag_to_guild_slug(user.home_guild_tag) == (guild_slug or "").strip().lower()
 
 
 def _roster_assignment_redirect_url(roster_view: str, rate: int, guild_slug: str | None) -> str:
@@ -170,7 +180,7 @@ async def port_battle_tool(request: Request, user: Annotated[User | None, Depend
 async def alliance_home(user: Annotated[User | None, Depends(get_optional_user)]):
     if user is None:
         return RedirectResponse("/auth/login", status_code=302)
-    return RedirectResponse(roster_board_url("alliance", 1), status_code=302)
+    return RedirectResponse("/rosters", status_code=302)
 
 
 @router.get("/guild/{slug}/roster")
@@ -187,9 +197,7 @@ async def guild_roster_shortcut(
     gslug = str(guild.get("slug", "")).strip().lower()
     if not gslug:
         raise HTTPException(status_code=404, detail="Unknown guild")
-    if not user_can_open_guild_board(user, gslug):
-        return RedirectResponse("/dashboard?forbidden=roster", status_code=303)
-    return RedirectResponse(roster_board_url("guild", 1, gslug), status_code=302)
+    return RedirectResponse("/rosters", status_code=302)
 
 
 @router.get("/guild/{slug}", response_class=HTMLResponse)
@@ -197,6 +205,7 @@ async def guild_landing_page(
     request: Request,
     slug: str,
     user: Annotated[User | None, Depends(get_optional_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     guild = get_guild_landing_page(slug)
     if guild is None:
@@ -219,6 +228,11 @@ async def guild_landing_page(
 
     members_total = len(members)
     display_members = members[:250]
+    can_edit_port_orders = _can_edit_guild_port_orders(user, guild["slug"])
+    existing_orders = await db.scalar(
+        select(GuildPortOrder).where(GuildPortOrder.guild_slug == guild["slug"])
+    )
+    port_orders_text = (existing_orders.content if existing_orders else "") or str(guild.get("intro") or "")
 
     return templates.TemplateResponse(
         request,
@@ -230,9 +244,47 @@ async def guild_landing_page(
             members=display_members,
             members_total=members_total,
             members_note=members_note,
+            port_orders_text=port_orders_text,
+            can_edit_port_orders=can_edit_port_orders,
             roster_board_url=roster_board_url,
         ),
     )
+
+
+@router.post("/guild/{slug}/port-orders")
+async def update_guild_port_orders(
+    slug: str,
+    user: Annotated[User, Depends(require_user_redirect)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    content: str = Form(""),
+):
+    guild = get_guild_landing_page(slug)
+    if guild is None:
+        raise HTTPException(status_code=404, detail="Unknown guild")
+    guild_slug = str(guild.get("slug") or "").strip().lower()
+    if not guild_slug:
+        raise HTTPException(status_code=404, detail="Unknown guild")
+    if not _can_edit_guild_port_orders(user, guild_slug):
+        raise HTTPException(status_code=403, detail="Not allowed to edit this guild's port orders")
+
+    normalized = (content or "").strip()
+    if len(normalized) > 6000:
+        raise HTTPException(status_code=400, detail="Port orders are too long (max 6000 characters).")
+
+    row = await db.scalar(select(GuildPortOrder).where(GuildPortOrder.guild_slug == guild_slug))
+    if row is None:
+        db.add(
+            GuildPortOrder(
+                guild_slug=guild_slug,
+                content=normalized,
+                updated_by_user_id=user.id,
+            )
+        )
+    else:
+        row.content = normalized
+        row.updated_by_user_id = user.id
+    await db.commit()
+    return RedirectResponse(f"/guild/{guild_slug}?orders_updated=1", status_code=303)
 
 
 @router.get("/rosters", response_class=HTMLResponse)
@@ -245,32 +297,8 @@ async def rosters_board(
 ):
     if user is None:
         return RedirectResponse("/auth/login", status_code=302)
-    view_raw = (view or "").strip()
-    if not view_raw:
-        return RedirectResponse(default_roster_board_path(user), status_code=302)
-
-    v = view_raw.lower()
-    if v not in ("alliance", "guild"):
-        return RedirectResponse(default_roster_board_path(user), status_code=302)
-
-    choices = guild_choices_for_roster(user)
-    current_guild: str | None = None
-    current_guild_name = ALLIANCE_PAGE["name"]
-
-    if v == "guild":
-        if not choices:
-            return RedirectResponse(roster_board_url("alliance", rate), status_code=302)
-        allowed = {c["slug"] for c in choices}
-        gslug = (guild or "").strip().lower()
-        if gslug not in allowed:
-            gslug = choices[0]["slug"]
-        if not user_can_open_guild_board(user, gslug):
-            return RedirectResponse("/dashboard?forbidden=roster", status_code=303)
-        current_guild = gslug
-        info = get_guild_landing_page(gslug)
-        current_guild_name = info["name"] if info else gslug
-    else:
-        current_guild = None
+    _ = (view, guild)  # Kept for backward-compatible URLs; roster board is now unified.
+    v = "alliance"
 
     try:
         port_names = get_port_names()
@@ -287,9 +315,6 @@ async def rosters_board(
             user=user,
             view=v,
             rate=rate,
-            current_guild=current_guild,
-            current_guild_name=current_guild_name,
-            guild_choices=choices,
             roster_board_url=roster_board_url,
             can_manage_rosters=user.can_manage_roster_assignments(),
             port_names=port_names,
@@ -388,9 +413,4 @@ async def roster_legacy_redirect(slug: str, user: Annotated[User | None, Depends
     page = get_roster_page(slug)
     if page is None:
         raise HTTPException(status_code=404, detail="Unknown roster")
-    if page["kind"] == "alliance":
-        return RedirectResponse(roster_board_url("alliance", 1), status_code=302)
-    gslug = page["slug"]
-    if not user_can_open_guild_board(user, gslug):
-        return RedirectResponse("/dashboard?forbidden=roster", status_code=303)
-    return RedirectResponse(roster_board_url("guild", 1, gslug), status_code=302)
+    return RedirectResponse("/rosters", status_code=302)

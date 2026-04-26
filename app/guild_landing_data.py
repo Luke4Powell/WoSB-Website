@@ -12,8 +12,8 @@ LANDING_COPY: dict[str, dict[str, Any]] = {
     "tif": {
         "hero_image": "/static/images/guilds/tif-hero.png",
         "slogan": (
-            "Welcome to TIF. The oldest and most dedicated Spanish guild. Together with our brother guilds, "
-            "we hold the line and keep Spain alive. When everyone else falters, we stand strong."
+            "Welcome to TIF. The oldest and most dedicated Spanish guild. We hold the line and keep Spain alive. "
+            "When everyone else falters, we stand strong."
         ),
         "intro": (
             "Use this space for port nights, screening rosters, and fleet announcements—keep it current for the crew."
@@ -21,17 +21,20 @@ LANDING_COPY: dict[str, dict[str, Any]] = {
     },
     "bwc": {
         "hero_image": "/static/images/guilds/bwc-hero.png",
-        "slogan": "Blackwolf runs silent until the bell rings.",
+        "slogan": (
+            "Blackwolf Chapter stands as Spain's second-strongest force: dedicated crew, hardened warriors, "
+            "and the black wolf at the prow. When the call goes out, BWC answers."
+        ),
         "intro": "Blackwolf Chapter guild page — orders, night actions, and fleet posture live here.",
     },
     "sva": {
         "hero_image": "/static/images/guilds/sva-hero.png",
-        "slogan": "Soberana steel, Caribbean resolve.",
+        "slogan": "Espaniol está en ascenso. (Spanish is rising.)",
         "intro": "La Armada Soberana — doctrine, port nights, and screening rosters start on this deck.",
     },
     "lp": {
         "hero_image": "/static/images/guilds/lp-hero.png",
-        "slogan": "Loose talk, live powder.",
+        "slogan": "When you need to sink them all, LP is who you call.",
         "intro": "LP☠ — quick orders, bold screening, and powder when it counts. Personalize this block anytime.",
     },
 }

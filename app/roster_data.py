@@ -89,10 +89,7 @@ def guild_choices_for_roster(user: User) -> list[dict[str, Any]]:
 
 
 def default_roster_board_path(user: User) -> str:
-    """Where to send a member opening /rosters with no query string."""
-    choices = guild_choices_for_roster(user)
-    if choices:
-        return roster_board_url(view="guild", guild=choices[0]["slug"], rate=1)
+    """Single roster board path for all members."""
     return roster_board_url(view="alliance", rate=1)
 
 

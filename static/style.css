@@ -397,25 +397,28 @@ code {
   gap: 0.65rem;
 }
 
-.site-footer__tag {
+.site-footer__home-link {
   font-family: var(--font-poster);
+  font-size: 0.78rem;
   font-weight: 700;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--stucco);
-  padding: 0.28rem 0.65rem;
+  padding: 0.38rem 0.8rem;
   border-radius: 999px;
-  border: 2px solid var(--border-bold);
-  background: #2f4a52;
+  border: 2px solid var(--border-strong);
+  background: rgba(42, 33, 26, 0.9);
+  color: var(--stucco);
 }
 
-.site-footer__sep {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--ochre);
-  opacity: 0.55;
+.site-footer__home-link:hover {
+  color: var(--stucco);
+  border-color: var(--border-bold);
+  background: #45362c;
+}
+
+.site-footer__note {
+  font-size: 0.82rem;
+  color: #d8cdc0;
 }
 
 /* Typography blocks */
@@ -1489,6 +1492,32 @@ a.guild-quarter-card .btn {
 .guild-member__handle {
   margin-left: auto;
   flex-shrink: 0;
+}
+
+.guild-orders-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.guild-orders-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 9rem;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border-strong);
+  background: #1f1814;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.94rem;
+  line-height: 1.5;
+  padding: 0.65rem 0.8rem;
+  resize: vertical;
+}
+
+.guild-orders-textarea:focus-visible {
+  outline: 2px solid var(--ochre-soft);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

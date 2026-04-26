@@ -21,22 +21,23 @@
 .pb-intro__notes {
   width: 100%;
   margin-top: 0.35rem;
-  box-sizing: border-box;
-  padding: 0.55rem 0.7rem;
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--border-strong);
-  background: #1f1814;
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 0.92rem;
-  line-height: 1.45;
-  resize: vertical;
-  min-height: 4.5rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--stucco-dim);
+}
+
+.pb-intro__notes p {
+  margin: 0 0 0.45rem;
+  line-height: 1.5;
+}
+
+.pb-intro__notes p:last-child {
+  margin-bottom: 0;
 }
 
 .pb-intro__notes:focus-visible {
-  outline: 2px solid var(--ochre-soft);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .pb-intro__actions {

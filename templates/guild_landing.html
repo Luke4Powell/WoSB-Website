@@ -29,9 +29,32 @@
 <section class="card card--lift">
   <div class="card__head">
     <h2 class="card__title">Port orders</h2>
-    <span class="card__badge card__badge--muted">Editable</span>
+    <span class="card__badge card__badge--muted">{% if can_edit_port_orders %}Editable{% else %}Read only{% endif %}</span>
   </div>
-  <p class="card__lede">{{ guild.intro }}</p>
+  {% if request.query_params.get("orders_updated") %}
+  <div class="banner banner--success" role="status">
+    <span class="banner__icon" aria-hidden="true">✓</span>
+    <span>Port orders updated.</span>
+  </div>
+  {% endif %}
+  {% if can_edit_port_orders %}
+  <form method="post" action="/guild/{{ guild.slug }}/port-orders" class="guild-orders-form">
+    <label class="pb-field__k" for="guild-port-orders">Guild orders</label>
+    <textarea
+      id="guild-port-orders"
+      name="content"
+      class="guild-orders-textarea"
+      rows="6"
+      maxlength="6000"
+      placeholder="Write current port orders, battle priorities, and screening instructions..."
+    >{{ port_orders_text }}</textarea>
+    <div class="pb-intro__actions">
+      <button type="submit" class="btn btn--primary btn--sm">Save Port Orders</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="card__lede" style="white-space: pre-wrap">{{ port_orders_text }}</p>
+  {% endif %}
 </section>
 
 <section class="card card--lift">
