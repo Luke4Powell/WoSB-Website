@@ -4,6 +4,28 @@ This is the operational runbook for the live WoSB site hosted in a Proxmox LXC a
 
 Use this file for maintenance, updates, and recovery.
 
+## !!! DAILY USE: DEPLOY LATEST WEBSITE UPDATE !!!
+
+After you push code changes to GitHub, run this on the LXC server:
+
+```bash
+bash /opt/wosb/WoSB-Website/scripts/deploy-live.sh
+```
+
+Success looks like:
+
+- `wosb.service` = `active (running)`
+- `nginx` config test = `syntax is ok`
+- `cloudflared.service` = `active (running)`
+- final line: `[wosb] Done.`
+
+If deploy fails, run:
+
+```bash
+systemctl status wosb --no-pager
+journalctl -u wosb -n 80 --no-pager
+```
+
 ## 1) Current architecture
 
 - Hosting: Proxmox LXC (Ubuntu)
