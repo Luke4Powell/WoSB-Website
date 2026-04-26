@@ -2,6 +2,90 @@
 
 Python **FastAPI** app with **Discord OAuth**, signed **sessions**, and a small **SQLite** database (swap to Postgres later via `DATABASE_URL`). Pages are **server-rendered** with Jinja2 so you can grow into APIs and richer tools incrementally.
 
+## Proxmox/LXC deployment guide
+
+For full Ubuntu 24.04 LXC deployment steps (Proxmox target), use:
+
+- `PROXMOXSETUP-README.md`
+
+Maintenance rule:
+
+- Any change that affects deployment/runtime setup must also update `PROXMOXSETUP-README.md` in the same change.
+- This includes env vars, startup commands, scripts, service/proxy/TLS, DB setup, and OAuth callback behavior.
+
+## Script guide (what to run, and when)
+
+### Development scripts (Windows/Fedora/laptop)
+
+- `.\scripts\setup-dev.ps1` (Windows PowerShell)
+- `bash ./scripts/setup-dev.sh` (Linux/macOS/Fedora)
+
+Use these when:
+
+- setting up a new machine for the first time
+- repairing a machine after dependency or Python drift
+- starting local development quickly
+
+What these do:
+
+- verify Python 3.12
+- create `.venv` if missing
+- activate `.venv`
+- upgrade pip and install `requirements.txt`
+- warn if `.env` is missing
+- start dev server on `http://127.0.0.1:8000` with reload enabled
+
+### Production scripts (Ubuntu LXC/server)
+
+- `bash ./scripts/run-prod.sh`
+
+Use this when:
+
+- running on your long-term host (no auto-reload)
+- running behind Nginx/Caddy reverse proxy
+
+What this does:
+
+- verifies `.venv` and `.env` exist
+- starts `uvicorn` in production mode on `127.0.0.1:8000`
+
+- `bash ./scripts/deploy-update.sh`
+
+Use this when:
+
+- pulling latest `main` onto the server during deployments
+
+What this does:
+
+- `git fetch` and fast-forward pull from `origin/main`
+- updates Python dependencies
+- prints systemd restart/status commands
+
+### Systemd service template
+
+- File: `scripts/wosb.service.example`
+
+Use this when:
+
+- setting up persistent auto-start on Ubuntu
+
+How:
+
+1. Copy to `/etc/systemd/system/wosb.service`
+2. Edit paths/user/group for your server
+3. Run:
+   - `sudo systemctl daemon-reload`
+   - `sudo systemctl enable wosb`
+   - `sudo systemctl start wosb`
+
+### Linux script permissions (one-time)
+
+On Fedora/Ubuntu, run once after clone:
+
+```bash
+chmod +x ./scripts/*.sh
+```
+
 ## Local setup
 
 1. Use Python 3.12 for this project (`.python-version` and `pyproject.toml` both enforce this policy):

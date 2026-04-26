@@ -1,0 +1,16 @@
+[Unit]
+Description=WoSB FastAPI service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/wosb/WoSB-Website
+EnvironmentFile=/opt/wosb/WoSB-Website/.env
+ExecStart=/opt/wosb/WoSB-Website/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
